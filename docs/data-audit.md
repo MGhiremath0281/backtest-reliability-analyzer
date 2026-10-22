@@ -26,17 +26,17 @@ No timestamps are written into the audit. Repeated runs with the same arguments 
 | `reference/corporate_actions/CF-CA-equities-RELIANCE-22-10-2021-to-22-10-2026.csv` | csv | 7 | 2022-08-18 to 2026-06-05 | 0 | — |
 | `reference/corporate_actions/CF-CA-equities-TCS-22-10-2021-to-22-10-2026.csv` | csv | 22 | 2022-01-19 to 2026-10-14 | 0 | — |
 | `reference/corporate_actions/CF-CA-equities-WIPRO-22-10-2021-to-22-10-2026.csv` | csv | 14 | 2022-01-21 to 2026-07-27 | 0 | — |
-| `reference/financial_results/CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv` | csv | 26 | 2021-12-31 to 2024-12-31 | 0 | — |
-| `reference/financial_results/CF-FR-equities-RELIANCE-22-10-2021-to-22-10-2026.csv` | csv | 27 | 2021-09-30 to 2024-12-31 | 0 | — |
-| `reference/financial_results/CF-FR-equities-TCS-22-10-2021-to-22-10-2026.csv` | csv | 26 | 2021-12-31 to 2024-12-31 | 0 | — |
-| `reference/financial_results/CF-FR-equities-WIPRO-22-10-2021-to-22-10-2026.csv` | csv | 24 | 2021-12-31 to 2024-12-31 | 0 | — |
 | `reference/financial_results/additional/CF-Integrated-Filing-equities-Integrated Filing- Financials-INFY-01-01-2025-to-22-10-2026.csv` | csv | 12 | 2025-03-31 to 2026-06-30 | 0 | — |
 | `reference/financial_results/additional/CF-Integrated-Filing-equities-Integrated Filing- Financials-RELIANCE-01-01-2025-to-22-10-2026.csv` | csv | 12 | 2025-03-31 to 2026-06-30 | 0 | — |
 | `reference/financial_results/additional/CF-Integrated-Filing-equities-Integrated Filing- Financials-TCS-01-01-2025-to-22-10-2026.csv` | csv | 14 | 2025-03-31 to 2026-09-30 | 0 | — |
 | `reference/financial_results/additional/CF-Integrated-Filing-equities-Integrated Filing- Financials-WIPRO-01-01-2025-to-22-10-2026.csv` | csv | 14 | 2025-03-31 to 2026-09-30 | 0 | — |
+| `reference/financial_results/CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv` | csv | 26 | 2021-12-31 to 2024-12-31 | 0 | — |
+| `reference/financial_results/CF-FR-equities-RELIANCE-22-10-2021-to-22-10-2026.csv` | csv | 27 | 2021-09-30 to 2024-12-31 | 0 | — |
+| `reference/financial_results/CF-FR-equities-TCS-22-10-2021-to-22-10-2026.csv` | csv | 26 | 2021-12-31 to 2024-12-31 | 0 | — |
+| `reference/financial_results/CF-FR-equities-WIPRO-22-10-2021-to-22-10-2026.csv` | csv | 24 | 2021-12-31 to 2024-12-31 | 0 | — |
+| `reference/index_constituents/extracted_csv/cnxnifty_Jun2013.csv` | csv | 50 | 2013-06-28 to 2013-06-28 | 0 | — |
 | `reference/index_constituents/extracted_csv/NIFTY_50_Mar2022.csv` | csv | 50 | 2022-03-31 to 2022-03-31 | 0 | — |
 | `reference/index_constituents/extracted_csv/NIFTY_50_Sep2026.csv` | csv | 50 | 2026-09-30 to 2026-09-30 | 0 | — |
-| `reference/index_constituents/extracted_csv/cnxnifty_Jun2013.csv` | csv | 50 | 2013-06-28 to 2013-06-28 | 0 | — |
 | `reference/index_constituents/manifest_samples.csv` | csv | 19 | — | 0 | — |
 | `reference/listing_history/Copy_of_List_of_delisted_Companies_20260612152719_9_20260901172525_1_20260910122051_3_20260928154733_20261012162023_4_20261014163222.xlsx` :: `delisted` | xlsx | 460 | 2002-04-15 to 2026-10-16 | 0 | 6 malformed ISIN(s) |
 | `reference/listing_history/Copy_of_List_of_delisted_Companies_20260612152719_9_20260901172525_1_20260910122051_3_20260928154733_20261012162023_4_20261014163222.xlsx` :: `Add Data-Comp. Delisted` | xlsx | 153 | 2016-04-24 to 2026-09-02 | 0 | — |

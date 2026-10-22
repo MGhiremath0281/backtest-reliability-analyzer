@@ -10,6 +10,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from .derived_schema import DERIVED_FILENAMES
+
 PRICE_PATTERN = "raw/*-ALL-N.csv"
 CORPORATE_ACTION_PATTERN = "reference/corporate_actions/CF-CA-equities-*.csv"
 FINANCIAL_PATTERN = "reference/financial_results/CF-FR-equities-*.csv"
@@ -40,6 +42,25 @@ KIND_ORDER = {
     "name_changes": 5,
     "symbol_changes": 6,
     "delistings": 7,
+    "derived_prices": 8,
+    "derived_corporate_actions": 9,
+    "derived_financials_legacy": 10,
+    "derived_financials_integrated": 11,
+    "derived_current_listings": 12,
+    "derived_name_changes": 13,
+    "derived_symbol_changes": 14,
+    "derived_delistings": 15,
+}
+
+DERIVED_LABELS = {
+    "derived_prices": "Normalized prices",
+    "derived_corporate_actions": "Normalized corporate actions",
+    "derived_financials_legacy": "Normalized legacy financial results",
+    "derived_financials_integrated": "Normalized integrated financial filings",
+    "derived_current_listings": "Normalized current listings",
+    "derived_name_changes": "Normalized name changes",
+    "derived_symbol_changes": "Normalized symbol changes",
+    "derived_delistings": "Normalized delistings",
 }
 
 
@@ -210,6 +231,25 @@ def discover_datasets(data_root: Path) -> list[DatasetSpec]:
                 expected_symbol=None,
                 missing=not path.is_file(),
                 missing_message=None,
+            )
+        )
+
+    # Derived datasets are optional: they are only discovered after a
+    # preparation run has created them. Their absence is not a source failure.
+    derived_dir = data_root / "processed" / "normalized"
+    for kind, filename in DERIVED_FILENAMES.items():
+        path = derived_dir / filename
+        if not path.is_file():
+            continue
+        specs.append(
+            DatasetSpec(
+                dataset_id=f"{kind}:{path.stem}",
+                category="derived_data",
+                kind=kind,
+                label=DERIVED_LABELS[kind],
+                path=path,
+                relative_path=_relative(path, data_root),
+                expected_symbol=None,
             )
         )
 

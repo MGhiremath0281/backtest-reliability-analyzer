@@ -35,6 +35,7 @@ class Table:
 
     path: Path
     headers: list[str] = field(default_factory=list)
+    raw_headers: list[str] = field(default_factory=list)
     rows: list[Row] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
     readable: bool = True
@@ -60,6 +61,34 @@ def _empty_table(path: Path, issues: list[Issue], *, readable: bool = False) -> 
         headers_ok=False,
         issues=issues,
     )
+
+
+def _decode_legacy_fallback(
+    raw: bytes, exc: UnicodeDecodeError, issues: list[Issue]
+) -> str | None:
+    """Decode a non-UTF-8 file as Windows-1252, or report it as unreadable.
+
+    NSE reference exports are sometimes published in a legacy single-byte
+    encoding (for example ``delisted.csv`` uses byte ``0xA0``, a non-breaking
+    space). The loader is read-only and never rewrites a source file, so a
+    legacy-encoded file is decoded here and the deviation is recorded as a
+    ``warning`` rather than silently discarded. ``Windows-1252`` is used
+    because it is a strict superset of Latin-1 and decodes every byte value,
+    so the fallback cannot itself fail. It is only applied after a genuine
+    UTF-8 failure, so UTF-8 files are unaffected.
+    """
+
+    text = raw.decode("cp1252", errors="replace")
+    issues.append(
+        warning(
+            "csv.encoding",
+            (
+                f"File is not valid UTF-8 (byte offset {exc.start}); it was "
+                "decoded as Windows-1252 without modifying the source file."
+            ),
+        )
+    )
+    return text
 
 
 def read_csv(path: Path) -> Table:
@@ -112,13 +141,9 @@ def read_csv(path: Path) -> Table:
     try:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
-        issues.append(
-            error(
-                "csv.encoding",
-                f"File is not valid UTF-8 (byte offset {exc.start}).",
-            )
-        )
-        return _empty_table(path, issues)
+        text = _decode_legacy_fallback(raw, exc, issues)
+        if text is None:
+            return _empty_table(path, issues)
 
     if not text.strip():
         issues.append(error("csv.empty", "File is empty."))
@@ -191,6 +216,7 @@ def read_csv(path: Path) -> Table:
         issues.append(error("csv.no_header", "File has no header row."))
         return Table(
             path=path,
+            raw_headers=raw_headers or [],
             issues=issues,
             readable=True,
             headers_ok=False,
@@ -256,6 +282,7 @@ def read_csv(path: Path) -> Table:
     return Table(
         path=path,
         headers=headers,
+        raw_headers=raw_headers,
         rows=parsed_rows,
         issues=issues,
         readable=True,

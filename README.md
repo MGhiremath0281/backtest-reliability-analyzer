@@ -5,9 +5,11 @@ It checks the files a backtest depends on, reports structural and semantic
 problems with consistent `PASS` / `WARN` / `FAIL` statuses, and writes a stable
 JSON report for later analysis.
 
-This first feature is intentionally about **data validation**. It does not claim
-to detect survivorship bias, look-ahead bias, or incorrect corporate-action
-adjustments; those are separate features.
+This first feature is intentionally about **data validation and reproducible
+preparation**. It builds normalized, derived datasets and audits whether the
+data can support survivorship-bias, look-ahead-bias, and corporate-action
+analysis. It does not implement those analyses. Raw source files are never
+modified; every normalized output is derived from them and can be regenerated.
 
 ## Why backtest reliability matters
 
@@ -37,9 +39,46 @@ below describe the files present at the time this feature was implemented
 | Delistings, all boards | `data/processed/delisted_companies_2021-2026.csv` | 77 | 2021-11-26 to 2026-10-16 | Processed 2021-2026 subset; includes main board, SME, and ITP. |
 | Delistings, main board | `data/processed/main_board_delistings_2021-2026.csv` | 65 | 2021-11-26 to 2026-10-16 | Processed main-board subset of the file above. |
 
+Feasibility samples collected for the historical-universe investigation (hashes
+recorded in the manifests; source files are never rewritten):
+
+| Reference sample | Files | Coverage / rows | Notes |
+|---|---|---|---|
+| Point-in-time index constituents | `data/reference/index_constituents/` | Jun 2013, Sep 2013, Mar 2022, Sep 2026 | Monthly ZIPs of per-index PDFs plus parsed NIFTY 50 CSVs; month-end constituent membership. |
+| Index-change press releases | `data/reference/index_constituents/snapshots_pdfs/` | Sep 2013 → Sep 2026 (samples) | Effective dates and IN/OUT symbols; see the caveat about soft-404 responses. |
+| Delisted-security price samples | `data/reference/price_samples/bhavcopy_zips/` | 1999-01-05, 2014-01-01/02, 2024-07-08 | Legacy and modern bhavcopies; confirm delisted symbols are retrievable. |
+| Legacy delisted reference CSV | `data/reference/price_samples/delisted.csv` | 328 rows, 2002 → Nov 2020 | Windows-1252 encoded and **incomplete**; rejected in favor of the official workbook. |
+
+The full source-by-source comparison, exact coverage, feasibility verdicts, and
+the recommended collection plan are documented in
+[`docs/historical-universe-gap.md`](docs/historical-universe-gap.md).
+
 The `.xlsx` workbook under `data/reference/listing_history/` is retained as
-source provenance for the processed delisting CSVs. This validator does not
-parse Excel workbooks; it validates the CSV exports.
+source provenance for the processed delisting CSVs. It is now read directly by
+the preparation pipeline; its primary `delisted` sheet is the full-history event
+list, and its auxiliary sheets are audited but not merged.
+
+### Normalized derived datasets
+
+`python -m bra.prepare` writes these files under `data/processed/normalized/`.
+They retain source traceability (`source_file`, `source_line`/`source_row`) and
+review flags. Existing processed delisting CSVs are not overwritten.
+
+| Derived dataset | Output file | Input rows | Output rows |
+|---|---|---:|---:|
+| Prices | `prices.csv` | 5,030 | 5,030 |
+| Corporate actions | `corporate_actions.csv` | 54 | 54 |
+| Legacy financial results | `financial_results_legacy.csv` | 103 | 103 |
+| Integrated financial filings | `financial_results_integrated.csv` | 52 | 52 |
+| Current listings | `current_listings.csv` | 2,611 | 2,611 |
+| Name changes | `name_changes.csv` | 2,329 | 2,078 |
+| Symbol changes | `symbol_changes.csv` | 1,067 | 1,067 |
+| Delistings | `delistings.csv` | 460 | 460 |
+
+The only row-count reduction is the name-change event dataset: 251 exact
+duplicate copies are represented once. Every collapsed source line is recorded
+in `source_lines`, and `source_record_count` records the group size. Conflicting
+spellings and events shared across symbols are retained and flagged.
 
 Sources are NSE historical-data, corporate-action, financial-filing, listing,
 and delisting exports as collected in this repository. No network download is
@@ -53,22 +92,33 @@ bra/
   cli.py                   argument parsing and exit codes
   discovery.py             stable dataset discovery (read-only)
   csv_io.py                CSV loading and integrity diagnostics
+  xlsx_io.py               read-only standard-library XLSX reader
   parsing.py               date, timestamp, number, and header normalisation
+  derived_schema.py        shared derived headers, keys, and review flags
   models.py                Issue / DatasetResult / Report models
   runner.py                validation orchestration
   reporting.py             console and JSON rendering
+  prepare/
+    __main__.py            python -m bra.prepare entry point
+    common.py              atomic writer, hashing, normalization helpers
+    market.py              price, corporate-action, financial transforms
+    reference.py           listing, change-history, delisting transforms
+    inventory.py           raw/derived file and workbook-sheet inventory
+    audit.py               cross-dataset audit and Markdown rendering
+    runner.py              prepare orchestration
   validators/
     common.py              shared schema, coverage, duplicate helpers
     prices.py              OHLC and trading-date validation
     corporate_actions.py   action identifiers, dates, duplicates, coverage
     financials.py          reporting period vs dissemination validation
     listings.py            current listings, name/symbol changes, delistings
+    derived.py             independent validation of normalized outputs
 tests/                     isolated pytest fixtures and tests
 ```
 
-Validation logic is split by dataset semantics; orchestration, CSV handling, and
-reporting stay separate. The engine uses only the Python standard library at
-runtime.
+Validation and preparation logic is split by dataset semantics; orchestration,
+CSV/XLSX handling, and reporting stay separate. The engine uses only the Python
+standard library at runtime.
 
 ## Setup
 
@@ -82,9 +132,22 @@ python -m pip install -e ".[dev]"
 python -m pip install pytest
 ```
 
-## Running validation
+## Running preparation and validation
 
-From the project root:
+Build the normalized derived datasets and the audit first. This step is
+read-only with respect to every source file:
+
+```bash
+python -m bra.prepare
+```
+
+It writes eight CSVs to `data/processed/normalized/`, a machine-readable audit
+to `reports/data_audit.json` (git-ignored), and a tracked human-readable audit
+to `docs/data-audit.md`. It refuses to publish if a source hash changes during
+the run.
+
+Then run validation. Derived datasets are discovered automatically **only when
+they exist**, so validation works with or without a preparation run:
 
 ```bash
 python -m bra
@@ -98,6 +161,12 @@ Useful options:
 ```bash
 # Explicit paths
 python -m bra --data-root data --json-report reports/validation_report.json
+
+# Preparation with explicit paths
+python -m bra.prepare --data-root data \
+  --output-dir data/processed/normalized \
+  --audit-json reports/data_audit.json \
+  --audit-doc docs/data-audit.md
 
 # Show every occurrence instead of the first few examples per issue code
 python -m bra --verbose
@@ -130,12 +199,12 @@ The JSON report has this shape:
   "data_root": "data",
   "overall_status": "FAIL",
   "summary": {
-    "dataset_count": 21,
-    "pass": 0,
-    "warn": 20,
+    "dataset_count": 29,
+    "pass": 3,
+    "warn": 25,
     "fail": 1,
     "error_count": 117,
-    "warning_count": 57
+    "warning_count": 93
   },
   "datasets": [
     {
@@ -230,10 +299,70 @@ Listings and delistings:
 - Current listings and historical delistings are reported as separate dataset
   results; the current listing file is not treated as the historical universe.
 
+Reproducible preparation:
+
+- Read-only standard-library XLSX reading, including all workbook sheets and
+  document properties.
+- Normalization of column names, ISO dates/timestamps, Indian-grouped numbers,
+  and harmless identifier whitespace in derived data only.
+- Stable column mappings and per-row `source_file` / `source_line` traceability.
+- Exact-duplicate collapse for name-change events with every source line kept.
+- Retention and flagging of conflicting spellings, shared events, no-op symbol
+  changes, malformed ISINs, auxiliary-sheet conflicts, and relisted identifiers.
+- Atomic, deterministic CSV writes; reruns over unchanged inputs are byte-identical.
+- A source-hash guard that refuses to publish an audit if a source changed.
+- `reports/data_audit.json` plus tracked `docs/data-audit.md`.
+
+Derived-data validation:
+
+- Independent schema, key, date, timestamp, identifier, ISIN, and coverage checks.
+- Duplicate-key detection on the documented natural key for each derived dataset.
+- OHLC relationships rechecked from normalized prices.
+- Publication-lag recomputation for both financial schemas.
+- Name-change source-line/count consistency checks.
+- Review flags are surfaced as warnings, never silently discarded.
+
 Automated tests cover valid/invalid prices, duplicate dates, missing values,
 invalid OHLC, malformed/empty CSVs, corporate actions, financial timestamp
 parsing, listings/delistings, discovery, report generation, and CLI exit codes.
 All test fixtures live in temporary directories.
+
+## Data audit findings
+
+The full evidence is in `docs/data-audit.md` and `reports/data_audit.json`.
+Headline facts from the collected files:
+
+- Prices: 5,030 rows across 4 symbols and 3 series (`EQ`, `BL`, `T0`); EQ
+  coverage is 2021-10-22 to 2026-10-22 with 1,240 dates per symbol.
+- Corporate actions: 54 rows; all 54 ex-dates match an EQ trading date.
+- Financial results: 103 legacy rows (periods 2021-09-30 to 2024-12-31) and 52
+  integrated rows (2025-03-31 to 2026-09-30), with dissemination timestamps.
+- Current listings: 2,611 rows; 2,609 distinct symbols/ISINs (two ISINs are
+  shared across series). This is a snapshot, not a historical universe.
+- Name changes: 2,329 raw rows; 117 exact duplicate groups (251 extra records),
+  5 same-symbol/date spelling-variant groups, and 12 shared-event groups. Exact
+  copies are collapsed only in the derived event file; all conflicts are kept.
+- Symbol changes: 1,067 rows; 10 no-op changes, 9 shared new-symbol targets, and
+  17 same-company/date multi-record groups. All are retained and flagged.
+- Delistings: the workbook primary sheet has 460 rows (2002-04-15 to
+  2026-10-16) and exactly contains the 77 processed 2021-2026 rows. The
+  auxiliary compulsory-delisting sheet has one date conflict (`AUSTRAL`), which
+  remains flagged and unmerged.
+
+Assessment:
+
+- **A. Survivorship bias — not supported by the current data.** There is no
+  point-in-time universe, historical index membership, or delisted-security
+  price history. The current listing file must not be used as a historical
+  universe.
+- **B. Look-ahead bias — partially supported for event timing only.** Financial
+  dissemination timestamps and effective dates exist, but corporate-action
+  announcement times, historical universe membership, and availability
+  timestamps on prices do not.
+- **C. Corporate actions — event dates supported; adjustments not verifiable.**
+  Ex-dates are present and consistent with trading dates, but there are no
+  adjustment factors or adjusted prices, and action ratios exist only in free
+  text.
 
 ## Not implemented yet
 
@@ -241,9 +370,8 @@ All test fixtures live in temporary directories.
 - Look-ahead-bias detection or event-time availability analysis.
 - Verification or application of corporate-action price adjustments.
 - An authoritative NSE trading calendar or holiday-aware session completeness.
-- Validation of the binary `.xlsx` delisting workbook.
-- Cross-dataset reconciliation (for example, symbol changes vs price history, or
-  delisting dates vs last trading dates).
+- Full cross-dataset reconciliation between delisting dates and last trading dates
+  (only workbook-versus-processed and ex-date-versus-price-date checks are done).
 - Fetching or refreshing datasets from NSE.
 - A database, API server, frontend, or AI component.
 
@@ -263,15 +391,22 @@ All test fixtures live in temporary directories.
   those series can represent special sessions or auction prices.
 - No weekend or exchange-holiday completeness check is made. A calendar gap over
   10 days in the `EQ` series is only a warning for human review.
-- Delisting CSVs are a processed 2021-2026 subset. Their source workbook is not
-  parsed. The main-board file is a subset of the all-boards file, not an
+- Delisting CSVs are a processed 2021-2026 subset. The delisting workbook is
+  read directly for the full-history event list; its auxiliary sheets are audited
+  but not merged because they overlap the primary sheet and contain a date
+  conflict. The main-board file is a subset of the all-boards file, not an
   independent universe.
+- Derived data is written separately under `data/processed/normalized/`. Raw
+  files and the existing processed delisting CSVs are never rewritten.
 - The listing reference is a current snapshot. It must not be read as a complete
-  historical list of companies that existed at any past date.
+  historical list of companies that existed at any past date. A symbol/ISIN that
+  appears in both the current snapshot and the delisting history is retained in
+  both and flagged as a time-dependent identifier.
 - The collected source data already contains quality defects. The validator
   reports them; it does not repair the source files.
-- Reports are generated in `reports/`, which is ignored by Git. Source datasets
-  under `data/` are preserved.
+- Reports are generated in `reports/`, which is ignored by Git. The tracked
+  audit document is `docs/data-audit.md`. Source datasets under `data/` are
+  preserved.
 
 ## Testing
 
@@ -291,6 +426,7 @@ ruff format --check bra tests
 
 ```bash
 python -m pytest
+python -m bra.prepare
 python -m bra --verbose
 git status
 ```

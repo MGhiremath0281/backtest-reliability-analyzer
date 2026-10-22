@@ -1,0 +1,51 @@
+symbol,security_name,industry,close_price,index_mcap_cr,weightage_pct,snapshot_date,index_name,source_pdf
+ADANIPORTS,Adani Ports and Special Economic Zone Ltd.,Services,774.20,55604,0.73,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+APOLLOHOSP,Apollo Hospitals Enterprise Ltd.,Healthcare,4516.10,46104,0.60,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+ASIANPAINT,Asian Paints Ltd.,Consumer Durables,3079.95,138851,1.82,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+AXISBANK,Axis Bank Ltd.,Financial Services,761.15,200933,2.63,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+BAJAJ-AUTO,Bajaj Auto Ltd.,Automobile and Auto Components,3653.00,47568,0.62,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+BAJFINANCE,Bajaj Finance Ltd.,Financial Services,7259.95,193397,2.53,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+BAJAJFINSV,Bajaj Finserv Ltd.,Financial Services,17060.45,103168,1.35,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+BPCL,Bharat Petroleum Corporation Ltd.,"Oil, Gas & Consumable Fuels",359.35,34299,0.45,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+BHARTIARTL,Bharti Airtel Ltd.,Telecommunication,754.95,178287,2.33,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+BRITANNIA,Britannia Industries Ltd.,Fast Moving Consumer Goods,3206.40,37844,0.50,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+CIPLA,Cipla Ltd.,Healthcare,1018.05,52568,0.69,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+COALINDIA,Coal India Ltd.,"Oil, Gas & Consumable Fuels",183.05,38355,0.50,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+DIVISLAB,Divi's Laboratories Ltd.,Healthcare,4402.05,56093,0.73,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+DRREDDY,Dr. Reddy's Laboratories Ltd.,Healthcare,4295.45,52186,0.68,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+EICHERMOT,Eicher Motors Ltd.,Automobile and Auto Components,2457.15,34264,0.45,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+GRASIM,Grasim Industries Ltd.,Construction Materials,1664.00,62438,0.82,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HCLTECH,HCL Technologies Ltd.,Information Technology,1163.75,123163,1.61,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HDFCBANK,HDFC Bank Ltd.,Financial Services,1470.35,644054,8.43,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HDFCLIFE,HDFC Life Insurance Company Ltd.,Financial Services,538.20,50026,0.65,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HEROMOTOCO,Hero MotoCorp Ltd.,Automobile and Auto Components,2294.15,29796,0.39,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HINDALCO,Hindalco Industries Ltd.,Metals & Mining,569.50,83185,1.09,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HINDUNILVR,Hindustan Unilever Ltd.,Fast Moving Consumer Goods,2048.65,182913,2.39,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+HDFC,Housing Development Finance Corporation Ltd.,Financial Services,2390.40,432477,5.66,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+ICICIBANK,ICICI Bank Ltd.,Financial Services,730.30,507446,6.64,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+ITC,ITC Ltd.,Fast Moving Consumer Goods,250.65,219307,2.87,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+INDUSINDBK,IndusInd Bank Ltd.,Financial Services,935.40,60867,0.80,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+INFY,Infosys Ltd.,Information Technology,1906.85,697881,9.13,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+JSWSTEEL,JSW Steel Ltd.,Metals & Mining,732.65,70839,0.93,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+KOTAKBANK,Kotak Mahindra Bank Ltd.,Financial Services,1753.85,257542,3.37,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+LT,Larsen & Toubro Ltd.,Construction,1767.65,213580,2.79,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+M&M,Mahindra & Mahindra Ltd.,Automobile and Auto Components,806.55,77208,1.01,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+MARUTI,Maruti Suzuki India Ltd.,Automobile and Auto Components,7561.30,100501,1.31,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+NTPC,NTPC Ltd.,Power,135.00,64143,0.84,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+NESTLEIND,Nestle India Ltd.,Fast Moving Consumer Goods,17380.55,62003,0.81,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+ONGC,Oil & Natural Gas Corporation Ltd.,"Oil, Gas & Consumable Fuels",163.90,59795,0.78,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+POWERGRID,Power Grid Corporation of India Ltd.,Power,216.80,74102,0.97,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+RELIANCE,Reliance Industries Ltd.,"Oil, Gas & Consumable Fuels",2634.75,909012,11.89,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+SBILIFE,SBI Life Insurance Company Ltd.,Financial Services,1121.45,49362,0.65,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+SHREECEM,Shree Cement Ltd.,Construction Materials,24032.60,32083,0.42,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+SBIN,State Bank of India,Financial Services,493.55,189404,2.48,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+SUNPHARMA,Sun Pharmaceutical Industries Ltd.,Healthcare,914.75,98766,1.29,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+TCS,Tata Consultancy Services Ltd.,Information Technology,3739.95,387359,5.07,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+TATACONSUM,Tata Consumer Products Ltd.,Fast Moving Consumer Goods,777.40,46567,0.61,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+TATAMOTORS,Tata Motors Ltd.,Automobile and Auto Components,433.75,77778,1.02,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+TATASTEEL,Tata Steel Ltd.,Metals & Mining,1307.20,105439,1.38,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+TECHM,Tech Mahindra Ltd.,Information Technology,1499.45,93218,1.22,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+TITAN,Titan Company Ltd.,Consumer Durables,2536.15,105823,1.38,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+UPL,UPL Ltd.,Chemicals,769.60,42337,0.55,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+ULTRACEMCO,UltraTech Cement Ltd.,Construction Materials,6602.30,76235,1.00,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf
+WIPRO,Wipro Ltd.,Information Technology,591.90,87611,1.15,2022-03-31,NIFTY 50,NIFTY_50_Mar2022.pdf

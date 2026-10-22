@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import csv
+import zipfile
+from datetime import date
 from io import StringIO
 from pathlib import Path
+from xml.sax.saxutils import escape, quoteattr
 
 from bra.models import DatasetResult
 
@@ -347,3 +350,180 @@ def create_valid_data_root(base: Path, *, bom: bool = False) -> Path:
         [delisting_row()],
     )
     return base
+
+
+def excel_serial(value: date) -> str:
+    """Return the Excel 1900-system serial for a date."""
+
+    return str((value - date(1899, 12, 30)).days)
+
+
+def write_xlsx(
+    path: Path,
+    sheets: dict[str, list[list[str]]],
+    *,
+    properties: dict[str, str] | None = None,
+) -> Path:
+    """Write a minimal XLSX workbook for read-only reader tests."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sheet_items = list(sheets.items())
+
+    content_types = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+        '<Default Extension="xml" ContentType="application/xml"/>',
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+        '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>',
+    ]
+    for index in range(1, len(sheet_items) + 1):
+        content_types.append(
+            f'<Override PartName="/xl/worksheets/sheet{index}.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        )
+    content_types.append("</Types>")
+
+    workbook_sheets = []
+    relationships = []
+    for index, (name, _) in enumerate(sheet_items, start=1):
+        workbook_sheets.append(
+            f'<sheet name={quoteattr(name)} sheetId="{index}" '
+            f'r:id="rId{index}"/>'
+        )
+        relationships.append(
+            f'<Relationship Id="rId{index}" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+            f'Target="worksheets/sheet{index}.xml"/>'
+        )
+
+    workbook = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        f'<sheets>{"".join(workbook_sheets)}</sheets>'
+        "</workbook>"
+    )
+    workbook_rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        f'{"".join(relationships)}'
+        "</Relationships>"
+    )
+    root_rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" '
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+        'Target="xl/workbook.xml"/>'
+        '<Relationship Id="rId2" '
+        'Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" '
+        'Target="docProps/core.xml"/>'
+        "</Relationships>"
+    )
+
+    props = properties or {}
+    core_properties = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        (
+            '<cp:coreProperties '
+            'xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
+            'xmlns:dc="http://purl.org/dc/elements/1.1/">'
+        ),
+    ]
+    property_tags = {
+        "title": "dc:title",
+        "creator": "dc:creator",
+    }
+    for key, value in props.items():
+        tag = property_tags.get(key, f"cp:{key}")
+        core_properties.append(f"<{tag}>{escape(value)}</{tag}>")
+    core_properties.append("</cp:coreProperties>")
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", "".join(content_types))
+        archive.writestr("_rels/.rels", root_rels)
+        archive.writestr("xl/workbook.xml", workbook)
+        archive.writestr("xl/_rels/workbook.xml.rels", workbook_rels)
+        archive.writestr("docProps/core.xml", "".join(core_properties))
+
+        for index, (_, rows) in enumerate(sheet_items, start=1):
+            cells: list[str] = []
+            for row_number, values in enumerate(rows, start=1):
+                row_cells = []
+                for column_number, value in enumerate(values, start=1):
+                    if value == "":
+                        continue
+                    letters = ""
+                    position = column_number
+                    while position:
+                        position, remainder = divmod(position - 1, 26)
+                        letters = chr(65 + remainder) + letters
+                    row_cells.append(
+                        f'<c r="{letters}{row_number}" t="inlineStr">'
+                        f'<is><t xml:space="preserve">{escape(str(value))}</t></is></c>'
+                    )
+                if row_cells:
+                    cells.append(
+                        f'<row r="{row_number}">{"".join(row_cells)}</row>'
+                    )
+            worksheet = (
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                f'<sheetData>{"".join(cells)}</sheetData>'
+                "</worksheet>"
+            )
+            archive.writestr(f"xl/worksheets/sheet{index}.xml", worksheet)
+
+    return path
+
+
+def create_prepare_data_root(base: Path) -> Path:
+    """Create a valid tree that also contains the delisting workbook."""
+
+    create_valid_data_root(base)
+    workbook = base / (
+        "reference/listing_history/"
+        "Copy_of_List_of_delisted_Companies_test.xlsx"
+    )
+    write_xlsx(
+        workbook,
+        {
+            "delisted": [
+                DELISTING_HEADERS,
+                [
+                    "OLDTECH",
+                    "INE123A01018",
+                    "Old Tech Limited",
+                    "Main Board",
+                    excel_serial(date(2024, 1, 15)),
+                    "Voluntary Delisting",
+                ],
+            ],
+            "Add Data-Comp. Delisted": [
+                DELISTING_HEADERS,
+                [
+                    "OLDTECH",
+                    "INE123A01018",
+                    "Old Tech Limited",
+                    "Main Board",
+                    excel_serial(date(2024, 1, 15)),
+                    "Compulsory Delisting",
+                ],
+            ],
+            "Exit Provided": [
+                DELISTING_HEADERS,
+                [
+                    "OLDTECH",
+                    "INE123A01018",
+                    "Old Tech Limited",
+                    "Main Board",
+                    excel_serial(date(2024, 1, 15)),
+                    "Voluntary Delisting",
+                ],
+            ],
+        },
+        properties={"title": "Test delisting workbook", "creator": "pytest"},
+    )
+    return base
+

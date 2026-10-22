@@ -1,0 +1,51 @@
+symbol,security_name,industry,close_price,index_mcap_cr,weightage_pct,snapshot_date,index_name,source_pdf
+ADANIENT,Adani Enterprises Ltd.,Metals & Mining,2903.40,98174,0.94,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ADANIPORTS,Adani Ports and Special Economic Zone Ltd.,Services,1798.30,140545,1.35,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+APOLLOHOSP,Apollo Hospitals Enterprise Ltd.,Healthcare,8165.50,83806,0.80,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ASIANPAINT,Asian Paints Ltd.,Consumer Durables,2402.60,108293,1.04,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+AXISBANK,Axis Bank Ltd.,Financial Services,1226.00,351500,3.37,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+BSE,BSE Ltd.,Financial Services,3092.00,125998,1.21,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+BAJAJ-AUTO,Bajaj Auto Ltd.,Automobile and Auto Components,10874.00,118323,1.13,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+BAJFINANCE,Bajaj Finance Ltd.,Financial Services,959.40,261072,2.50,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+BAJAJFINSV,Bajaj Finserv Ltd.,Financial Services,1731.00,100350,0.96,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+BEL,Bharat Electronics Ltd.,Capital Goods,388.30,138688,1.33,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+BHARTIARTL,Bharti Airtel Ltd.,Telecommunication,1757.00,532867,5.10,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+CIPLA,Cipla Ltd.,Healthcare,1346.00,75545,0.72,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+COALINDIA,Coal India Ltd.,"Oil, Gas & Consumable Fuels",425.00,101535,0.97,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+DRREDDY,Dr. Reddy's Laboratories Ltd.,Healthcare,1233.00,74994,0.72,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+EICHERMOT,Eicher Motors Ltd.,Automobile and Auto Components,7150.00,98379,0.94,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ETERNAL,Eternal Ltd.,Consumer Services,320.00,231246,2.22,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+GRASIM,Grasim Industries Ltd.,Construction Materials,3061.90,115238,1.10,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+HCLTECH,HCL Technologies Ltd.,Information Technology,1230.00,129238,1.24,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+HDFCBANK,HDFC Bank Ltd.,Financial Services,708.70,1083321,10.38,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+HDFCLIFE,HDFC Life Insurance Company Ltd.,Financial Services,521.20,55918,0.54,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+HINDALCO,Hindalco Industries Ltd.,Metals & Mining,941.80,135981,1.30,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+HINDUNILVR,Hindustan Unilever Ltd.,Fast Moving Consumer Goods,1879.10,166272,1.59,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ICICIBANK,ICICI Bank Ltd.,Financial Services,1321.70,944763,9.05,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ITC,ITC Ltd.,Fast Moving Consumer Goods,262.75,252623,2.42,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+INFY,Infosys Ltd.,Information Technology,994.10,350140,3.35,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+INDIGO,InterGlobe Aviation Ltd.,Services,4984.00,112510,1.08,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+JSWSTEEL,JSW Steel Ltd.,Metals & Mining,1253.40,120340,1.15,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+JIOFIN,Jio Financial Services Ltd.,Financial Services,216.88,70990,0.68,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+KOTAKBANK,Kotak Mahindra Bank Ltd.,Financial Services,417.00,306231,2.93,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+LT,Larsen & Toubro Ltd.,Construction,3760.00,438901,4.20,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+M&M,Mahindra & Mahindra Ltd.,Automobile and Auto Components,2950.00,262847,2.52,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+MARUTI,Maruti Suzuki India Ltd.,Automobile and Auto Components,11967.00,155200,1.49,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+MAXHEALTH,Max Healthcare Institute Ltd.,Healthcare,929.80,69011,0.66,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+NTPC,NTPC Ltd.,Power,322.75,152957,1.47,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+NESTLEIND,Nestle India Ltd.,Fast Moving Consumer Goods,1310.00,93675,0.90,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ONGC,Oil & Natural Gas Corporation Ltd.,"Oil, Gas & Consumable Fuels",225.80,87466,0.84,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+POWERGRID,Power Grid Corporation of India Ltd.,Power,260.50,117638,1.13,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+RELIANCE,Reliance Industries Ltd.,"Oil, Gas & Consumable Fuels",1187.00,791510,7.58,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+SBILIFE,SBI Life Insurance Company Ltd.,Financial Services,1696.40,76041,0.73,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+SHRIRAMFIN,Shriram Finance Ltd.,Financial Services,982.70,137281,1.32,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+SBIN,State Bank of India,Financial Services,959.50,395462,3.79,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+SUNPHARMA,Sun Pharmaceutical Industries Ltd.,Healthcare,1816.60,191834,1.84,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TCS,Tata Consultancy Services Ltd.,Information Technology,2050.60,208778,2.00,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TATACONSUM,Tata Consumer Products Ltd.,Fast Moving Consumer Goods,949.50,61662,0.59,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TMPV,Tata Motors Passenger Vehicles Ltd.,Automobile and Auto Components,283.50,59155,0.57,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TATASTEEL,Tata Steel Ltd.,Metals & Mining,184.30,152500,1.46,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TECHM,Tech Mahindra Ltd.,Information Technology,1524.00,96543,0.92,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TITAN,Titan Company Ltd.,Consumer Durables,4587.00,189056,1.81,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+TRENT,Trent Ltd.,Consumer Services,2621.60,86983,0.83,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf
+ULTRACEMCO,UltraTech Cement Ltd.,Construction Materials,10956.00,129328,1.24,2026-09-30,NIFTY 50,NIFTY_50_Sep2026.pdf

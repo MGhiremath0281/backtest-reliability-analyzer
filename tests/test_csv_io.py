@@ -108,13 +108,27 @@ def test_directory_path_is_unreadable(tmp_path: Path):
     assert [issue.code for issue in table.issues] == ["csv.unreadable"]
 
 
-def test_invalid_utf8_is_reported(make_csv):
+def test_invalid_utf8_falls_back_to_windows1252_with_warning(make_csv):
     path = make_csv("invalid.csv", raw_bytes=b"Symbol,Date\nINFY,\xff\n")
 
     table = read_csv(path)
 
     assert "csv.encoding" in codes(table)
-    assert not table.readable
+    issue = next(issue for issue in table.issues if issue.code == "csv.encoding")
+    assert issue.severity.value == "warning"
+    assert table.readable
+    assert len(table.rows) == 1
+    # cp1252 decodes 0xff to U+00FF; the source file is left untouched.
+    assert table.rows[0].get("Date") == "ÿ"
+
+
+def test_source_file_is_not_rewritten_after_encoding_fallback(make_csv):
+    path = make_csv("immutable.csv", raw_bytes=b"Symbol,Note\nINFY,\xa0\n")
+    before = path.read_bytes()
+
+    read_csv(path)
+
+    assert path.read_bytes() == before
 
 
 def test_blank_lines_are_reported_and_ignored(make_csv):

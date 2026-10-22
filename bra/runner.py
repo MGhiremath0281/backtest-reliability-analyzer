@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from .csv_io import read_csv
+from .derived_schema import DERIVED_HEADERS
 from .discovery import DatasetSpec, discover_datasets
 from .models import DatasetResult, Report
-from .validators import corporate_actions, financials, listings, prices
+from .validators import corporate_actions, derived, financials, listings, prices
 
 
 def _validate_table(spec: DatasetSpec, table, result: DatasetResult) -> None:
@@ -30,6 +31,8 @@ def _validate_table(spec: DatasetSpec, table, result: DatasetResult) -> None:
             else "all_board_delistings_2021_2026"
         )
         listings.validate_delistings(table, result, scope=scope)
+    elif spec.kind in DERIVED_HEADERS:
+        derived.validate(table, result, spec.kind)
     else:
         result.add_error(
             "runner.unknown_dataset_kind",

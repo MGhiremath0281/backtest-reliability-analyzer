@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, test, and validate data
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Ruff lint (bra and tests)
+        run: ruff check bra tests
+
+      - name: Pytest (full suite)
+        run: python -m pytest
+
+      - name: Data preparation audit
+        run: python -m bra.prepare
+
+      - name: Verify prepared outputs match the committed datasets
+        run: |
+          if ! git diff --exit-code -- data/processed/normalized docs/data-audit.md; then
+            echo "::error::python -m bra.prepare produced output that differs from the committed derived datasets."
+            echo "Either the raw inputs changed without regenerating, or preparation is not deterministic."
+            exit 1
+          fi
+
+      - name: Validation (known raw finding gated by scripts/ci_validate.py)
+        run: python scripts/ci_validate.py
+
+      - name: Upload JSON reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-reports
+          path: |
+            reports/validation_report.json
+            reports/data_audit.json
+          if-no-files-found: warn

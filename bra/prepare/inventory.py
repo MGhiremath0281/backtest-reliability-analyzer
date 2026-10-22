@@ -44,6 +44,19 @@ def _relative(path: Path, root: Path) -> str:
         return path.as_posix()
 
 
+def _inventory_sort_key(path: Path, root: Path) -> tuple[str, str]:
+    """Return a platform-independent key for inventory paths.
+
+    ``Path`` ordering follows the host filesystem's case rules, so sorting
+    ``Path`` objects directly produces different inventory order on Linux and
+    Windows for names such as ``CF-FR.csv`` and ``additional.csv``. Sort by the
+    relative POSIX path instead, case-insensitively with a raw-path tie-breaker.
+    """
+
+    relative = _relative(path, root)
+    return (relative.casefold(), relative)
+
+
 def _is_identifier_column(header: str) -> bool:
     lowered = header.casefold()
     return "symbol" in lowered or "isin" in lowered or lowered == "series"
@@ -315,7 +328,10 @@ def build_inventory(
 
     excluded = [path.resolve() for path in exclude_directories]
     files: list[dict[str, Any]] = []
-    for path in sorted(root.rglob("*")):
+    for path in sorted(
+        root.rglob("*"),
+        key=lambda item: _inventory_sort_key(item, root),
+    ):
         if not path.is_file() or _is_within(path.resolve(), excluded):
             continue
         suffix = path.suffix.casefold()

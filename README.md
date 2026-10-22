@@ -125,7 +125,8 @@ standard library at runtime.
 Requires Python 3.10 or newer. There are no runtime dependencies.
 
 ```bash
-# Optional: install the package in editable mode with the test dependency
+# Optional: install the package in editable mode with the development
+# dependencies (pytest and ruff)
 python -m pip install -e ".[dev]"
 
 # Or install only the test runner and run from the project root
@@ -421,6 +422,38 @@ directory. Linting/formatting is optional:
 ruff check bra tests
 ruff format --check bra tests
 ```
+
+## Continuous integration
+
+CI is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and
+runs on every push to any branch, on pull requests targeting `main`, and on
+manual workflow dispatch. Each run installs the project with its development
+dependencies on Python 3.12 (with pip caching) and then performs, in order:
+
+1. `ruff check bra tests` — lint the package and tests with the repository's
+   Ruff configuration.
+2. `python -m pytest` — the complete test suite. Fixtures are isolated in
+   temporary directories; the real `data/` tree is never touched.
+3. `python -m bra.prepare` — regenerate the normalized datasets and the audit
+   (raw files are only read), then verify with `git diff` that the outputs are
+   byte-identical to the committed derived datasets.
+4. `python scripts/ci_validate.py` — run `python -m bra` and gate its result.
+
+Validation exits `1` because of one documented finding: the raw `namechange.csv`
+contains 117 groups of exact duplicate records (`listings.duplicate_record`;
+see [`docs/data-audit.md`](docs/data-audit.md)). CI never edits raw data and
+never converts that finding into a silent pass: the gate tolerates exactly that
+dataset, issue code, and group count, surfaces it as a warning annotation in
+the run summary, and fails for any other failing dataset, any other issue on a
+failing dataset, or any change in the duplicate-group count.
+
+No secrets, API keys, network downloads, or files outside Git are required.
+
+When a run fails, open the failed job under the Actions tab: each check is a
+separate step with its own log. The workflow also uploads
+`reports/validation_report.json` and `reports/data_audit.json` as the
+`json-reports` artifact for machine-readable diagnosis. Every step can be
+reproduced locally with the commands shown above.
 
 ## Recommended next commands
 

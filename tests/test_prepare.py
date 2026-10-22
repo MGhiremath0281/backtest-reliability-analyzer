@@ -363,6 +363,34 @@ def test_prepare_never_modifies_sources_and_is_deterministic(tmp_path: Path):
     assert second.audit_doc.read_bytes() == first_doc
 
 
+def test_audit_inventory_order_is_stable_and_platform_independent(tmp_path: Path):
+    root = create_prepare_data_root(tmp_path / "data")
+    ordering_dir = root / "reference" / "ordering"
+    for filename in ("additional.csv", "CF-FR.csv", "cnxnifty.csv", "NIFTY.csv"):
+        write_csv(ordering_dir / filename, ["Value"], [[filename]])
+
+    first = _run(root, tmp_path)
+    first_audit = first.audit_json.read_bytes()
+    first_doc = first.audit_doc.read_bytes()
+    first_paths = [
+        item["path"]
+        for item in first.audit["source_inventory"]["files"]
+        if item["path"].startswith("reference/ordering/")
+    ]
+
+    assert first_paths == [
+        "reference/ordering/additional.csv",
+        "reference/ordering/CF-FR.csv",
+        "reference/ordering/cnxnifty.csv",
+        "reference/ordering/NIFTY.csv",
+    ]
+
+    second = _run(root, tmp_path)
+
+    assert second.audit_json.read_bytes() == first_audit
+    assert second.audit_doc.read_bytes() == first_doc
+
+
 def test_audit_records_coverage_and_assessments(tmp_path: Path):
     root = create_prepare_data_root(tmp_path / "data")
 

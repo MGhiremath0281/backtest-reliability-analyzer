@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AppLayout } from './components/layout/AppLayout';
+import { LandingPage } from './pages/LandingPage';
 import { OverviewDashboard } from './pages/OverviewDashboard';
 import { DatasetsPage } from './pages/Datasets/DatasetsPage';
 import { DatasetDetailPage } from './pages/Datasets/DatasetDetailPage';
@@ -30,24 +31,35 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<OverviewDashboard />} />
-            <Route path="/datasets" element={<DatasetsPage />} />
-            <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
-            <Route path="/validation" element={<ValidationPage />} />
-            <Route path="/survivorship" element={<SurvivorshipPage />} />
-            <Route path="/lookahead" element={<LookAheadPage />} />
-            <Route path="/corporate-actions" element={<CorporateActionsPage />} />
-            <Route path="/runs" element={<AnalysisRunsPage />} />
-            <Route path="/runs/:runId" element={<AnalysisRunDetailPage />} />
-            <Route path="/findings" element={<FindingsExplorerPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/system" element={<SystemStatusPage />} />
-            <Route path="/status" element={<SystemStatusPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AppLayout>
+        <Routes>
+          {/* Public Devlab Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Internal Dashboard & Audit Workspace */}
+          <Route
+            path="/*"
+            element={
+              <AppLayout>
+                <Routes>
+                  <Route path="/dashboard" element={<OverviewDashboard />} />
+                  <Route path="/datasets" element={<DatasetsPage />} />
+                  <Route path="/datasets/:datasetId" element={<DatasetDetailPage />} />
+                  <Route path="/validation" element={<ValidationPage />} />
+                  <Route path="/survivorship" element={<SurvivorshipPage />} />
+                  <Route path="/lookahead" element={<LookAheadPage />} />
+                  <Route path="/corporate-actions" element={<CorporateActionsPage />} />
+                  <Route path="/runs" element={<AnalysisRunsPage />} />
+                  <Route path="/runs/:runId" element={<AnalysisRunDetailPage />} />
+                  <Route path="/findings" element={<FindingsExplorerPage />} />
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/system" element={<SystemStatusPage />} />
+                  <Route path="/status" element={<SystemStatusPage />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppLayout>
+            }
+          />
+        </Routes>
       </BrowserRouter>
     </QueryClientProvider>
   );

@@ -16,8 +16,17 @@ inferred from pattern guessing alone.
 Raw source files were downloaded into `data/reference/` and are never rewritten
 or normalized in place. Normalized outputs are separate derived files under
 `data/processed/normalized/`. This investigation does **not** implement
-survivorship-bias detection; it only establishes whether the required data can
-be collected.
+survivorship-bias detection or quantify its return impact; it only establishes
+whether the required data can be collected.
+
+The read-only Survivorship-Bias Analyzer (`bra/validators/survivorship/`) now
+consumes the snapshots collected here. It reports which dated memberships are
+verified, the gaps between them, delisted-security price matching, and
+identifier risks. It treats membership as verified only on exact snapshot dates,
+never interpolates between them, and never substitutes current listings,
+delisting events, symbol equality, or price presence for historical membership.
+The feasibility conclusion below is unchanged: a complete monthly timeline and
+delisted price histories still have to be collected before bias can be measured.
 
 ## 1. What is missing
 
@@ -170,6 +179,11 @@ this repository:
 - **Delisted prices:** reachable per trading day from the legacy bhavcopy; a
   delisted symbol (RANBAXY, CAIRN, SESAGOA) is confirmed present in historical
   files.
+- **Current analyzer coverage:** only the three collected NIFTY 50/CNX NIFTY
+  snapshots are point-in-time evidence. Until every month is collected, the
+  analyzer reports membership between snapshots as unverified and marks the
+  backtest universe/price checks that depend on a continuous timeline as
+  `unavailable` or `partial`; it does not fill the gap with present-day data.
 
 ## 4. Required datasets, sources, coverage, and next action
 

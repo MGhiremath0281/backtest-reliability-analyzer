@@ -51,8 +51,14 @@ def _validate_table(spec: DatasetSpec, table, result: DatasetResult) -> None:
 def run_validation(
     data_root: str | Path,
     specs: list[DatasetSpec] | None = None,
+    backtest: survivorship.BacktestConfig | None = None,
 ) -> Report:
-    """Discover and validate every supported dataset under ``data_root``."""
+    """Discover and validate every supported dataset under ``data_root``.
+
+    ``backtest`` optionally enables the backtest-specific survivorship
+    assessment; when omitted, only the general data-coverage audit runs and
+    backtest-specific results are reported as unavailable.
+    """
 
     root = Path(data_root)
     dataset_specs = specs if specs is not None else discover_datasets(root)
@@ -98,7 +104,9 @@ def run_validation(
 
     if any(kind in tables_by_kind for kind in survivorship.RELEVANT_KINDS):
         try:
-            report.datasets.append(survivorship.analyze(root, tables_by_kind))
+            report.datasets.append(
+                survivorship.analyze(root, tables_by_kind, backtest=backtest)
+            )
         except Exception as exc:  # noqa: BLE001 - keep analysis failures visible.
             analysis = DatasetResult(
                 dataset_id=survivorship.ANALYSIS_DATASET_ID,

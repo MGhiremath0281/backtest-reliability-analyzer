@@ -5,11 +5,15 @@ It checks the files a backtest depends on, reports structural and semantic
 problems with consistent `PASS` / `WARN` / `FAIL` statuses, and writes a stable
 JSON report for later analysis.
 
-This first feature is intentionally about **data validation and reproducible
-preparation**. It builds normalized, derived datasets and audits whether the
-data can support survivorship-bias, look-ahead-bias, and corporate-action
-analysis. It does not implement those analyses. Raw source files are never
-modified; every normalized output is derived from them and can be regenerated.
+The project is intentionally about **data validation, reproducible preparation,
+and evidence-based coverage analysis**. It builds normalized, derived datasets,
+audits whether the data can support survivorship-bias, look-ahead-bias, and
+corporate-action analysis, and includes a read-only Survivorship-Bias Analyzer.
+That analyzer measures point-in-time universe and price coverage, delisted
+security matching, and identifier risks; it does **not** claim that
+survivorship bias is absent or quantify its return impact. Raw source files are
+never modified; every normalized output is derived from them and can be
+regenerated.
 
 ## Why backtest reliability matters
 
@@ -113,6 +117,12 @@ bra/
     financials.py          reporting period vs dissemination validation
     listings.py            current listings, name/symbol changes, delistings
     derived.py             independent validation of normalized outputs
+    survivorship/
+      core.py              shared records, constants, read-only parsing
+      universe.py          dated membership snapshots and coverage gaps
+      matching.py          price coverage, delisted match classes, identifiers
+      backtest.py          BacktestConfig and backtest-specific checks
+      analysis.py          orchestration, metrics, and structured findings
 tests/                     isolated pytest fixtures and tests
 ```
 
@@ -176,6 +186,43 @@ python -m bra --verbose
 python -m bra --data-root /path/to/data
 ```
 
+### Survivorship-Bias Analyzer
+
+The analyzer always runs as the extra dataset `survivorship:analysis` when any
+relevant input is present. Without backtest flags it performs the general
+data-coverage audit. Supplying backtest flags enables the backtest-specific
+checks; anything the collected evidence cannot support is reported as
+`unavailable` with the reason and the source that would be required.
+
+```bash
+# General data-coverage audit (the default)
+python -m bra
+
+# Assess one index backtest over an explicit interval
+python -m bra --backtest-index "NIFTY 50" \
+  --backtest-start 2022-01-01 --backtest-end 2022-12-31
+
+# Explicit universe, with a required per-symbol price-coverage ratio
+python -m bra --backtest-symbol INFY --backtest-symbol TCS \
+  --backtest-start 2022-01-01 --backtest-end 2022-12-31 \
+  --backtest-min-price-coverage 0.9
+```
+
+The analyzer reads dated index-constituent CSVs from
+`data/reference/index_constituents/extracted_csv/` as reference inputs. It never
+interpolates membership between snapshots, never treats current listings,
+delisting events, symbol equality, or price history as proof of historical index
+membership, and never writes to any source dataset. Invalid backtest
+configuration (for example a missing interval) is reported as a warning in the
+report; an unparseable CLI date is a usage error and exits with code `2`.
+
+For requested membership snapshot dates, rebalancing dates, and identifier
+mappings, construct `survivorship.BacktestConfig` (or use
+`survivorship.build_backtest_config`) from Python and pass it as
+`run_validation(..., backtest=config)` or `survivorship.analyze(...,
+backtest=config)`. Missing evidence is reported per check instead of being
+substituted with price symbols or present-day listings.
+
 Exit codes:
 
 - `0` — no dataset failed. Warnings alone do not fail the run.
@@ -200,12 +247,12 @@ The JSON report has this shape:
   "data_root": "data",
   "overall_status": "FAIL",
   "summary": {
-    "dataset_count": 29,
+    "dataset_count": 30,
     "pass": 3,
-    "warn": 25,
+    "warn": 26,
     "fail": 1,
     "error_count": 117,
-    "warning_count": 93
+    "warning_count": 98
   },
   "datasets": [
     {
@@ -245,6 +292,20 @@ Typical warnings in the collected data are a UTF-8 BOM, padded or newline-laden
 headers, auxiliary-series OHLC anomalies, identifier whitespace, and a malformed
 ISIN in one delisting row. A critical failure in the collected data is the
 presence of exact duplicate company-name-change records.
+
+The `survivorship:analysis` dataset adds these metric blocks:
+
+| Block | Meaning |
+|---|---|
+| `analysis` | Mode (`general_data_coverage_audit` or `backtest_specific_assessment`), inputs read, and the explicit no-magnitude conclusion. |
+| `current_listing_snapshot` | Present-day listing counts and the `is_point_in_time_universe: false` limit. |
+| `price_coverage` | Symbols, rows, and actual date ranges in the collected price data. |
+| `delisted_price_coverage` | Per-security match classes (`confirmed`, `candidate`, `ambiguous`, `unmatched`) with explicit denominators and bounded examples. |
+| `index_membership` | Dated snapshot counts, discovered indexes, exact snapshot dates, sparse-coverage gaps, and the September 2013 archive floor. |
+| `universe_price_coverage` | Price coverage for the reconstructed historical universe, measured against observed priced trading days. |
+| `identifier_reuse`, `delisting_symbol_reuse`, `symbol_changes`, `continuity_evidence` | Relisting, identifier-reuse, ambiguous mapping, and symbol/name continuity evidence. |
+| `backtest_assessment` | Backtest config summary, per-check `status`/`reason`, universe resolution, membership and price coverage inside the interval, delisted securities in the interval, rebalancing-date verification, and the unavailable bias-impact inputs. |
+| `findings` | Separated confirmed facts, potential risks, coverage limitations, passed checks, unverifiable conclusions, and backtest results. |
 
 ## Implemented functionality
 
@@ -300,6 +361,31 @@ Listings and delistings:
 - Current listings and historical delistings are reported as separate dataset
   results; the current listing file is not treated as the historical universe.
 
+Survivorship-bias coverage analysis:
+
+- Present-day listing snapshot limits, with `is_point_in_time_universe: false`
+  and no use of listing dates as historical index membership.
+- Reconstruction of the historical universe only from dated, authoritative
+  index-constituent snapshots, with per-index dates and explicit gap reporting.
+- No interpolation between snapshots and no inference from current listings,
+  delisting events, symbol equality, or price presence.
+- Delisted-security matching classified as `confirmed` (ISIN continuity plus
+  temporally consistent price rows), `candidate` (symbol or dated symbol-change
+  chain), `ambiguous` (conflicting evidence), or `unmatched`.
+- Price coverage for the reconstructed universe, with explicit denominators,
+  observed trading days, bounded examples, and no silent member dropping.
+- Identifier-reuse, reused delisting symbol, ambiguous symbol-change mapping,
+  and symbol/name continuity evidence, each reported as evidence rather than
+  identity proof.
+- Optional `BacktestConfig` or CLI assessment of a target index or explicit
+  universe, interval, requested membership snapshots, rebalancing dates,
+  identifier mappings, and a minimum price-coverage ratio.
+- Every backtest check reports `ok`, `unavailable` with the missing source,
+  `not_applicable`, or `invalid`; the return impact of survivorship bias is
+  never fabricated from coverage data.
+- Structured findings separate confirmed facts, potential risks, coverage
+  limitations, passed checks, and unverifiable conclusions.
+
 Reproducible preparation:
 
 - Read-only standard-library XLSX reading, including all workbook sheets and
@@ -325,8 +411,11 @@ Derived-data validation:
 
 Automated tests cover valid/invalid prices, duplicate dates, missing values,
 invalid OHLC, malformed/empty CSVs, corporate actions, financial timestamp
-parsing, listings/delistings, discovery, report generation, and CLI exit codes.
-All test fixtures live in temporary directories.
+parsing, listings/delistings, discovery, report generation, CLI exit codes, the
+Survivorship-Bias Analyzer's snapshot/universe reconstruction, match classes,
+identifier risks, backtest configuration and assessment, JSON output, and
+deterministic reruns. All test fixtures live in temporary directories; the
+collected datasets under `data/` are never read or modified by the tests.
 
 ## Data audit findings
 
@@ -352,10 +441,15 @@ Headline facts from the collected files:
 
 Assessment:
 
-- **A. Survivorship bias — not supported by the current data.** There is no
-  point-in-time universe, historical index membership, or delisted-security
-  price history. The current listing file must not be used as a historical
-  universe.
+- **A. Survivorship bias — cannot be detected or quantified from the current
+  data.** The analyzer verifies only three dated membership snapshots (Jun 2013,
+  Mar 2022, Sep 2026) and finds no price match for any of the 454 grouped
+  delisted securities in the processed history; 73 of the 77 recorded universe
+  symbols also lack complete price coverage. There is therefore no continuous
+  point-in-time universe and no delisted-security return history from which to
+  measure bias. The current listing file must not be used as a historical
+  universe. The analyzer reports these coverage limits explicitly rather than
+  treating missing data as evidence of no bias.
 - **B. Look-ahead bias — partially supported for event timing only.** Financial
   dissemination timestamps and effective dates exist, but corporate-action
   announcement times, historical universe membership, and availability
@@ -367,7 +461,12 @@ Assessment:
 
 ## Not implemented yet
 
-- Survivorship-bias detection.
+- Quantification of survivorship-bias return impact. The analyzer reports
+  coverage, matching, and identifier evidence only; it does not estimate the
+  return difference caused by missing securities.
+- A complete point-in-time membership timeline for any full backtest period.
+  Only the collected snapshot dates are verified; dates between snapshots are
+  reported as unverified and are never interpolated.
 - Look-ahead-bias detection or event-time availability analysis.
 - Verification or application of corporate-action price adjustments.
 - An authoritative NSE trading calendar or holiday-aware session completeness.

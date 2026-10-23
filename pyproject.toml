@@ -7,10 +7,15 @@ name = "backtest-reliability-analyzer"
 version = "0.1.0"
 description = "Read-only validation of collected NSE datasets for backtest reliability analysis"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.0",
+    "uvicorn>=0.30",
+    "python-multipart>=0.0.9",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.9"]
+dev = ["pytest>=8", "ruff>=0.9", "httpx>=0.27"]
 
 [tool.setuptools.packages.find]
 include = ["bra*"]

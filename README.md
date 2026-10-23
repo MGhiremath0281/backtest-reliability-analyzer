@@ -123,24 +123,39 @@ bra/
       matching.py          price coverage, delisted match classes, identifiers
       backtest.py          BacktestConfig and backtest-specific checks
       analysis.py          orchestration, metrics, and structured findings
+    lookahead/
+      core.py              lookahead findings, records, and timeline structures
+      engine.py            financial dissemination and price availability audit
+  api/
+    __main__.py            python -m bra.api entry point
+    app.py                 FastAPI application factory, CORS, exception handlers
+    config.py              ApiConfig with BRA_STORAGE_DIR / BRA_DATA_ROOT
+    schemas.py             canonical schema definitions, aliases, type inference
+    models.py              Pydantic request & response models
+    storage.py             StorageManager (isolated datasets, analyses, runs, reports)
+    mapping.py             column mapping validator and auto-suggester
+    preparation.py         dataset normalizer generating prepared tables
+    adapters.py            unified bridge to underlying analysis & validation engine
+    routers/               versioned routers (health, datasets, schemas, validation,
+                           survivorship, lookahead, corporate_actions, runs, reports)
 tests/                     isolated pytest fixtures and tests
 ```
 
 Validation and preparation logic is split by dataset semantics; orchestration,
-CSV/XLSX handling, and reporting stay separate. The engine uses only the Python
-standard library at runtime.
+CSV/XLSX handling, reporting, and API routers stay cleanly separated. The core CLI
+engine uses only the Python standard library at runtime; the API layer uses FastAPI
+and Pydantic.
 
 ## Setup
 
-Requires Python 3.10 or newer. There are no runtime dependencies.
+Requires Python 3.10 or newer.
 
 ```bash
-# Optional: install the package in editable mode with the development
-# dependencies (pytest and ruff)
+# Install the package in editable mode with development & API dependencies
 python -m pip install -e ".[dev]"
 
-# Or install only the test runner and run from the project root
-python -m pip install pytest
+# Or run tests directly
+python -m pytest
 ```
 
 ## Running preparation and validation
@@ -482,21 +497,250 @@ Assessment:
   adjustment factors or adjusted prices, and action ratios exist only in free
   text.
 
-## Not implemented yet
+## REST API Layer (FastAPI)
 
-- Quantification of survivorship-bias return impact. The analyzer reports
-  coverage, matching, and identifier evidence only; it does not estimate the
-  return difference caused by missing securities.
-- A complete point-in-time membership timeline for any full backtest period.
-  Only the collected snapshot dates are verified; dates between snapshots are
-  reported as unverified and are never interpolated.
-- Look-ahead-bias detection or event-time availability analysis.
-- Verification or application of corporate-action price adjustments.
-- An authoritative NSE trading calendar or holiday-aware session completeness.
-- Full cross-dataset reconciliation between delisting dates and last trading dates
-  (only workbook-versus-processed and ex-date-versus-price-date checks are done).
-- Fetching or refreshing datasets from NSE.
-- A database, API server, frontend, or AI component.
+BRA includes a production-ready, asynchronous REST API layer built on FastAPI and Pydantic. It exposes all core validation and analyzer engines (data quality, survivorship bias, look-ahead bias, corporate actions, and combined analysis runs) via structured endpoints.
+
+### Key Capabilities
+- **Zero hardcoding**: All findings, summaries, metrics, and identifiers are dynamically derived from actual dataset files and real analyzer engines.
+- **Dual dataset support**: Works seamlessly with both canonical repository datasets (`existing-data`) and newly uploaded custom CSV files from diverse data providers.
+- **Dynamic schema mapping & preparation**: Automatically detects candidate schemas, provides safe column mapping suggestions, and normalizes datasets into prepared tables without mutating source uploads.
+- **Dataset isolation & security**: Strict path traversal prevention, isolated UUID storage per dataset, configurable upload size limits, and sanitization of internal exception traces.
+- **Persistence without heavy dependencies**: File-backed JSON and CSV persistence across API restarts without external database or message broker requirements.
+- **OpenAPI / Swagger documentation**: Interactive API explorer automatically generated at `/docs` and ReDoc at `/redoc`.
+
+---
+
+### Starting the API
+
+Run the API using either the module runner or Uvicorn:
+
+```bash
+# Using the module entry point (defaults to 127.0.0.1:8000)
+python -m bra.api --host 0.0.0.0 --port 8000
+
+# Or directly with uvicorn
+uvicorn bra.api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### Environment Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `BRA_STORAGE_DIR` | `<repo_root>/storage` | Root path for isolated datasets, analyses, runs, and reports. |
+| `BRA_DATA_ROOT` | `<repo_root>/data` | Path to canonical repository data. |
+| `BRA_MAX_UPLOAD_SIZE_BYTES` | `104857600` (100 MB) | Maximum upload payload size in bytes. |
+
+---
+
+### Complete Endpoint Reference
+
+#### 1. Health & System
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Basic application health check. |
+| `GET` | `/api/v1/health` | Service health including storage accessibility. |
+| `GET` | `/api/v1/metadata` | Registered analyzers, supported schemas, and system capabilities. |
+
+#### 2. Dataset Management
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/datasets/upload` | Upload one or multiple CSV files to create a new dataset. |
+| `GET` | `/api/v1/datasets` | List all available datasets (including canonical `existing-data`). |
+| `GET` | `/api/v1/datasets/{id}` | Get dataset metadata, files, and status. |
+| `GET` | `/api/v1/datasets/{id}/preview` | Preview real rows and columns with pagination (`limit`, `offset`, `file_id`). |
+| `GET` | `/api/v1/datasets/{id}/schema` | Detected candidate schemas, column types, and candidate matches. |
+| `POST` | `/api/v1/datasets/{id}/validate` | Run structural and semantic data-quality checks on raw files. |
+| `GET` | `/api/v1/datasets/{id}/validation` | Retrieve current validation results for a dataset. |
+| `GET` | `/api/v1/datasets/{id}/quality-summary` | Summary of dataset validation results and status. |
+| `DELETE` | `/api/v1/datasets/{id}` | Delete an uploaded dataset (canonical datasets are protected). |
+| `POST` | `/api/v1/datasets/{id}/delete-request` | Soft deletion request / validation endpoint. |
+
+#### 3. Schema Mapping & Preparation
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/schemas` | List all canonical schema definitions (prices, corporate actions, etc.). |
+| `GET` | `/api/v1/schemas/{type}` | Retrieve details, required fields, and column aliases for a schema. |
+| `POST` | `/api/v1/datasets/{id}/mapping` | Save or auto-suggest (`auto_suggest=true`) provider-to-canonical mappings. |
+| `GET` | `/api/v1/datasets/{id}/mapping` | Retrieve configured column mappings for a dataset. |
+| `POST` | `/api/v1/datasets/{id}/prepare` | Generate normalized derived working tables from mapped CSVs. |
+| `GET` | `/api/v1/datasets/{id}/preparation` | Retrieve preparation status, generated files, and warnings. |
+
+#### 4. General Validation
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/validate` | Execute general data-quality validation across raw or prepared files. |
+| `GET` | `/api/v1/validations/{id}` | Retrieve general validation record and results. |
+| `GET` | `/api/v1/validations/{id}/findings` | Retrieve individual findings with optional severity filter. |
+| `GET` | `/api/v1/validations/{id}/summary` | Aggregate finding counts by severity and issue classification. |
+
+#### 5. Survivorship Bias Analyzer
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/analyze/survivorship` | Execute survivorship-bias audit on historical universe & delistings. |
+| `GET` | `/api/v1/analyze/survivorship/{id}` | Retrieve survivorship analysis summary, coverage, and metrics. |
+| `GET` | `/api/v1/analyze/survivorship/{id}/universe` | Point-in-time universe snapshot coverage and gap details. |
+| `GET` | `/api/v1/analyze/survivorship/{id}/delisted` | Delisted security matching rates, prices, and identifier checks. |
+| `GET` | `/api/v1/analyze/survivorship/{id}/findings` | Findings specifically generated by survivorship validator. |
+
+#### 6. Look-Ahead Bias Analyzer
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/analyze/lookahead` | Execute look-ahead bias audit (publication timing vs backtest dates). |
+| `GET` | `/api/v1/analyze/lookahead/{id}` | Retrieve lookahead audit summary, verified metrics, and limitations. |
+| `GET` | `/api/v1/analyze/lookahead/{id}/findings` | Findings (leakage, timing mismatches, missing timestamps). |
+| `GET` | `/api/v1/analyze/lookahead/{id}/timeline` | Ordered publication timeline across financial and price events. |
+
+#### 7. Corporate Actions Analyzer
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/analyze/corporate-actions` | Execute corporate actions consistency and price coverage audit. |
+| `GET` | `/api/v1/analyze/corporate-actions/{id}` | Retrieve corporate actions audit summary and findings. |
+| `GET` | `/api/v1/analyze/corporate-actions/{id}/findings` | Findings (date mismatches, missing prices around ex-dates). |
+| `GET` | `/api/v1/analyze/corporate-actions/{id}/coverage` | Symbol-level corporate action coverage metrics. |
+
+#### 8. Combined Analysis Runs
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/analysis-runs` | Orchestrate multi-analyzer runs (survivorship, lookahead, corporate actions). |
+| `GET` | `/api/v1/analysis-runs` | List analysis runs with completion status and timestamps. |
+| `GET` | `/api/v1/analysis-runs/{id}` | Retrieve run metadata, analyzer statuses, and consolidated summary. |
+| `GET` | `/api/v1/analysis-runs/{id}/findings` | Combined findings from all executed analyzers. |
+| `GET` | `/api/v1/analysis-runs/{id}/summary` | Consolidated severity and finding counts. |
+| `POST` | `/api/v1/analysis-runs/{id}/cancel` | Cancel an in-flight analysis run. |
+| `GET` | `/api/v1/analysis-runs/{id}/events` | Retrieve lifecycle event log for the run. |
+
+#### 9. Reports & Exports
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/reports` | List all generated reports across runs and analyses. |
+| `GET` | `/api/v1/reports/{id}` | Retrieve report metadata, summary, and download URLs. |
+| `GET` | `/api/v1/reports/{id}/download?format=json` | Download full report as structured JSON. |
+| `GET` | `/api/v1/reports/{id}/download?format=csv` | Download findings as a tabular CSV. |
+| `GET` | `/api/v1/reports/{id}/download?format=pdf` | Returns HTTP 501 with format requirements. |
+| `GET` | `/api/v1/reports/{id}/download?format=xlsx` | Returns HTTP 501 with format requirements. |
+
+---
+
+### Step-by-Step Workflow Examples
+
+#### 1. Uploading Custom Provider CSVs
+
+Upload one or more CSV files from a market data provider:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/datasets/upload" \
+  -F "files=@my_prices.csv" \
+  -F "files=@my_corporate_actions.csv" \
+  -F "name=Vendor-X-2026"
+```
+
+Response:
+```json
+{
+  "dataset_id": "782f0542-a728-4e50-a924-a3f24bf71a5c",
+  "name": "Vendor-X-2026",
+  "files": [
+    {
+      "file_id": "93eb5a43-85f0-48e0-a7d1-e630cf5ad58f",
+      "filename": "my_prices.csv",
+      "file_size": 245000,
+      "row_count": 5200,
+      "columns": ["trade_date", "ticker", "close_price", "open_price", "high_price", "low_price", "vol"]
+    }
+  ],
+  "status": "uploaded"
+}
+```
+
+#### 2. Inspecting Detected Schema and Auto-Mapping
+
+Inspect what BRA detected:
+
+```bash
+curl "http://localhost:8000/api/v1/datasets/782f0542-a728-4e50-a924-a3f24bf71a5c/schema"
+```
+
+Generate safe mapping suggestions automatically:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/datasets/782f0542-a728-4e50-a924-a3f24bf71a5c/mapping" \
+  -H "Content-Type: application/json" \
+  -d '{"auto_suggest": true}'
+```
+
+#### 3. Preparing the Normalized Dataset
+
+Transform the mapped files into standardized tables without modifying original uploads:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/datasets/782f0542-a728-4e50-a924-a3f24bf71a5c/prepare"
+```
+
+#### 4. Executing a Combined Analysis Run
+
+Run selected analyzers against the prepared dataset:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/analysis-runs" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "782f0542-a728-4e50-a924-a3f24bf71a5c",
+    "analyzers": ["survivorship", "lookahead", "corporate_actions"],
+    "config": {
+      "start_date": "2022-01-01",
+      "end_date": "2026-10-01"
+    }
+  }'
+```
+
+Response:
+```json
+{
+  "run_id": "98124b61-9c88-444a-912f-6825e3646399",
+  "dataset_id": "782f0542-a728-4e50-a924-a3f24bf71a5c",
+  "status": "completed",
+  "analyzer_statuses": {
+    "survivorship": "completed",
+    "lookahead": "completed",
+    "corporate_actions": "completed"
+  },
+  "summary": {
+    "total_findings": 3,
+    "severity_counts": {"FAIL": 1, "WARN": 2, "INFO": 0}
+  },
+  "report_id": "841b897f-dfa2-4a0b-93ff-eb80c85b1a62"
+}
+```
+
+#### 5. Exporting Findings to CSV or JSON
+
+Download the full audit report as CSV:
+
+```bash
+curl "http://localhost:8000/api/v1/reports/841b897f-dfa2-4a0b-93ff-eb80c85b1a62/download?format=csv" -o findings.csv
+```
+
+Or as JSON:
+
+```bash
+curl "http://localhost:8000/api/v1/reports/841b897f-dfa2-4a0b-93ff-eb80c85b1a62/download?format=json" -o report.json
+```
+
+#### 6. Analyzing Existing Repository Data
+
+To analyze the canonical repository datasets directly without re-uploading, pass `dataset_id = "existing-data"`:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/analysis-runs" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "existing-data",
+    "analyzers": ["survivorship", "lookahead", "corporate_actions"]
+  }'
+```
+
+---
 
 ## Assumptions and known limitations
 

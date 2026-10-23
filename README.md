@@ -339,6 +339,29 @@ Corporate actions:
 - Counts by company, purpose, series, and company-purpose pairs.
 - Coverage by symbol and overall. Purposes are preserved verbatim; no action is
   assumed to be a split.
+- **Record-date / ex-date ordering**: when both are present and valid, a record
+  date that precedes the ex-date is flagged as a confirmed inconsistency
+  (`corporate_actions.confirmed_inconsistency`), since standard semantics place
+  the ex-date before the record date.
+- **Price-coverage matching**: corporate actions are matched against available
+  price data by symbol and date. When pre-event or post-event price rows are not
+  found near the ex-date, a `corporate_actions.price_coverage` warning is issued
+  as a data limitation. Missing coverage does not imply incorrect prices.
+- **Suspicious price discontinuities** around split and bonus events: the
+  pre-event close price and post-event close price are compared. The expected
+  price ratio is derived from the purpose text (e.g. ``Bonus 1:1`` → ratio ≈ 0.5).
+  A 20% tolerance band is used; if the actual ratio falls outside the band by
+  more than 2× the expected ratio, the finding is classified as
+  `corporate_actions.suspicious_adjustment`; if within the band, it is
+  `insufficient_evidence`. The classification is never presented as a definitive
+  claim of incorrect adjustment when the source data cannot establish whether
+  prices are adjusted or when the action became public.
+- **Classification of findings**: confirmed inconsistency (record before ex-date),
+  suspicious adjustment (price move inconsistent with the action's expected effect),
+  and insufficient evidence (cannot determine one way or the other because price
+  data is missing or the action's semantics are ambiguous). Severity is always
+  `warning` for coverage and discontinuity findings; only the record-before-ex-date
+  check produces an `error`.
 
 Financial results:
 

@@ -20,11 +20,23 @@ from .validators import (
 )
 
 
-def _validate_table(spec: DatasetSpec, table, result: DatasetResult) -> None:
+def _validate_table(
+    spec: DatasetSpec,
+    table,
+    result: DatasetResult,
+    tables_by_kind: dict[str, list] | None = None,
+) -> None:
     if spec.kind == "prices":
         prices.validate(table, result, spec.expected_symbol)
     elif spec.kind == "corporate_actions":
-        corporate_actions.validate(table, result, spec.expected_symbol)
+        price_table = None
+        if tables_by_kind is not None and "prices" in tables_by_kind:
+            price_table = (
+                tables_by_kind["prices"][0] if tables_by_kind["prices"] else None
+            )
+        corporate_actions.validate(
+            table, result, spec.expected_symbol, price_table=price_table
+        )
     elif spec.kind in {"financials", "integrated_financials"}:
         financials.validate(table, result, spec.expected_symbol)
     elif spec.kind == "current_listing":
@@ -97,7 +109,7 @@ def run_validation(
         tables_by_kind[spec.kind].append(table)
 
         try:
-            _validate_table(spec, table, result)
+            _validate_table(spec, table, result, tables_by_kind=tables_by_kind)
         except Exception as exc:  # noqa: BLE001 - report, do not hide, a broken dataset.
             result.add_error(
                 "runner.validator_exception",

@@ -47,6 +47,14 @@ export const TopNav: React.FC<TopNavProps> = ({ onToggleSidebar, isSidebarOpen }
         {/* Center: Quick navigation links (Devlab style) */}
         <nav className="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider font-mono">
           <Link
+            to="/dashboard"
+            className={`transition-colors hover:text-[#ff3b30] ${
+              location.pathname === '/dashboard' ? 'text-[#ff3b30] underline underline-offset-4' : 'text-zinc-700'
+            }`}
+          >
+            Dashboard
+          </Link>
+          <Link
             to="/datasets"
             className={`transition-colors hover:text-[#ff3b30] ${
               location.pathname.startsWith('/datasets') ? 'text-[#ff3b30] underline underline-offset-4' : 'text-zinc-700'

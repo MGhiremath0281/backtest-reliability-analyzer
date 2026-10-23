@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       items: [
         {
           label: 'Dashboard',
-          to: '/',
+          to: '/dashboard',
           icon: <LayoutDashboard className="w-4 h-4" />,
         },
       ],
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    end={item.to === '/'}
+                    end={item.to === '/dashboard'}
                     onClick={onClose}
                     className={({ isActive }) =>
                       `flex items-center justify-between px-3 py-2 text-xs font-mono font-bold tracking-tight border transition-all ${

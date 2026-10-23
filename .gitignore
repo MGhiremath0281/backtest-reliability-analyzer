@@ -17,3 +17,14 @@ venv/
 
 # Generated reports
 reports/
+
+# Brag / AI-generated output
+brag-output/
+
+# Agentic AI tools and configurations
+.agents/
+.agents/**
+skills-lock.json
+
+# Local agent/tool storage
+storage/

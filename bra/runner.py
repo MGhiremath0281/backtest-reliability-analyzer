@@ -14,6 +14,7 @@ from .validators import (
     derived,
     financials,
     listings,
+    lookahead,
     prices,
     survivorship,
 )
@@ -52,12 +53,15 @@ def run_validation(
     data_root: str | Path,
     specs: list[DatasetSpec] | None = None,
     backtest: survivorship.BacktestConfig | None = None,
+    lookahead_config: lookahead.LookaheadConfig | None = None,
 ) -> Report:
     """Discover and validate every supported dataset under ``data_root``.
 
     ``backtest`` optionally enables the backtest-specific survivorship
-    assessment; when omitted, only the general data-coverage audit runs and
-    backtest-specific results are reported as unavailable.
+    assessment; ``lookahead_config`` optionally enables the backtest-specific
+    look-ahead assessment. When omitted, the respective analyzer runs only
+    the general data-coverage audit and backtest-specific results are
+    reported as unavailable.
     """
 
     root = Path(data_root)
@@ -113,6 +117,24 @@ def run_validation(
                 category=survivorship.ANALYSIS_CATEGORY,
                 label=survivorship.ANALYSIS_LABEL,
                 path="survivorship",
+            )
+            analysis.add_error(
+                "runner.validator_exception",
+                f"{type(exc).__name__}: {exc}",
+            )
+            report.datasets.append(analysis)
+
+    if any(kind in tables_by_kind for kind in lookahead.LOOKAHEAD_RELEVANT_KINDS):
+        try:
+            report.datasets.append(
+                lookahead.analyze(root, tables_by_kind, config=lookahead_config)
+            )
+        except Exception as exc:  # noqa: BLE001 - keep analysis failures visible.
+            analysis = DatasetResult(
+                dataset_id=lookahead.LOOKAHEAD_DATASET_ID,
+                category=lookahead.LOOKAHEAD_CATEGORY,
+                label=lookahead.LOOKAHEAD_LABEL,
+                path="lookahead",
             )
             analysis.add_error(
                 "runner.validator_exception",

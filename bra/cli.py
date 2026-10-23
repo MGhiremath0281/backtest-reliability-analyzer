@@ -11,6 +11,7 @@ from pathlib import Path
 from .parsing import parse_date
 from .reporting import DEFAULT_REPORT_PATH, has_failures, print_console, write_json
 from .runner import run_validation
+from .validators.lookahead import LookaheadConfig
 from .validators.survivorship import BacktestConfig
 
 
@@ -102,6 +103,37 @@ def build_parser() -> argparse.ArgumentParser:
             "dropped."
         ),
     )
+    lookahead_group = parser.add_argument_group(
+        "look-ahead assessment",
+        (
+            "Optionally assess one backtest for look-ahead bias. It shares "
+            "--backtest-index, --backtest-start, --backtest-end, and "
+            "--backtest-symbol with the backtest assessment above; without "
+            "any of those or the flags below, only the general temporal "
+            "evidence audit runs."
+        ),
+    )
+    lookahead_group.add_argument(
+        "--decision-date",
+        action="append",
+        default=[],
+        type=_backtest_date,
+        metavar="DATE",
+        help=(
+            "A date on which the backtest makes a trading decision; repeat "
+            "for multiple decision dates. Treated as an end-of-day boundary."
+        ),
+    )
+    lookahead_group.add_argument(
+        "--feature-lookback-days",
+        type=int,
+        default=None,
+        metavar="DAYS",
+        help=(
+            "Assumed feature look-back window in days ending on each "
+            "decision date. Must not be negative."
+        ),
+    )
     return parser
 
 
@@ -127,19 +159,54 @@ def _backtest_config(args: argparse.Namespace) -> BacktestConfig | None:
     )
 
 
+def _lookahead_config(args: argparse.Namespace) -> LookaheadConfig | None:
+    """Build a LookaheadConfig when any look-ahead input was supplied.
+
+    The backtest interval flags are shared with the survivorship assessment,
+    so this builder also consumes them; the decision/look-back flags belong
+    to the look-ahead assessment alone. As with the survivorship
+    configuration, logical inconsistencies are validated inside the analysis
+    and reported there, not rejected here.
+    """
+
+    if not (
+        args.decision_date
+        or args.feature_lookback_days is not None
+        or args.backtest_start
+        or args.backtest_end
+        or args.backtest_index
+        or args.backtest_symbol
+    ):
+        return None
+    return LookaheadConfig(
+        target_index=args.backtest_index,
+        universe_symbols=tuple(
+            symbol.strip().upper() for symbol in args.backtest_symbol if symbol.strip()
+        ),
+        start_date=args.backtest_start,
+        end_date=args.backtest_end,
+        decision_dates=tuple(sorted(set(args.decision_date))),
+        lookback_days=args.feature_lookback_days,
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run validation and return a process exit code.
 
     Exit codes: 0 when there are no failures (warnings are allowed), 1 when at
     least one dataset fails, and 2 when the report cannot be written. Invalid
-    backtest inputs that argparse can detect (unparseable dates) exit with 2
-    as a command-line usage error; logically inconsistent backtest windows are
-    reported as warnings inside the report instead.
+    backtest/look-ahead inputs that argparse can detect (unparseable dates)
+    exit with 2 as a command-line usage error; logically inconsistent
+    backtest windows are reported as warnings inside the report instead.
     """
 
     args = build_parser().parse_args(argv)
     data_root = Path(args.data_root)
-    report = run_validation(data_root, backtest=_backtest_config(args))
+    report = run_validation(
+        data_root,
+        backtest=_backtest_config(args),
+        lookahead_config=_lookahead_config(args),
+    )
 
     try:
         report_path = write_json(report, args.json_report)

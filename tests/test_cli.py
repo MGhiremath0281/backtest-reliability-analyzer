@@ -20,9 +20,11 @@ def test_cli_returns_zero_for_clean_data(tmp_path: Path, capsys):
 
     assert exit_code == 0
     output = capsys.readouterr().out
-    assert "Overall status: PASS" in output
+    # Warnings do not fail the run; survivorship findings make the status WARN.
+    assert "Overall status: WARN" in output
     payload = json.loads(report_path.read_text(encoding="utf-8"))
-    assert payload["overall_status"] == "PASS"
+    assert payload["overall_status"] == "WARN"
+    assert any(d["id"] == "survivorship:analysis" for d in payload["datasets"])
 
 
 def test_cli_returns_zero_for_warnings_only(tmp_path: Path, capsys):
@@ -92,5 +94,6 @@ def test_module_entry_point_runs(tmp_path: Path):
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert "Overall status: PASS" in completed.stdout
+    # Warnings do not fail the run; survivorship findings make the status WARN.
+    assert "Overall status: WARN" in completed.stdout
     assert report_path.is_file()

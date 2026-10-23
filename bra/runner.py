@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from pathlib import Path
 
-from .csv_io import read_csv
+from .csv_io import Table, read_csv
 from .derived_schema import DERIVED_HEADERS
 from .discovery import DatasetSpec, discover_datasets
 from .models import DatasetResult, Report
-from .validators import corporate_actions, derived, financials, listings, prices
+from .validators import (
+    corporate_actions,
+    derived,
+    financials,
+    listings,
+    prices,
+    survivorship,
+)
 
 
 def _validate_table(spec: DatasetSpec, table, result: DatasetResult) -> None:
@@ -49,6 +57,7 @@ def run_validation(
     root = Path(data_root)
     dataset_specs = specs if specs is not None else discover_datasets(root)
     report = Report(data_root=str(data_root))
+    tables_by_kind: dict[str, list[Table]] = defaultdict(list)
 
     for spec in dataset_specs:
         result = DatasetResult(
@@ -75,6 +84,8 @@ def run_validation(
             report.datasets.append(result)
             continue
 
+        tables_by_kind[spec.kind].append(table)
+
         try:
             _validate_table(spec, table, result)
         except Exception as exc:  # noqa: BLE001 - report, do not hide, a broken dataset.
@@ -84,5 +95,21 @@ def run_validation(
             )
 
         report.datasets.append(result)
+
+    if any(kind in tables_by_kind for kind in survivorship.RELEVANT_KINDS):
+        try:
+            report.datasets.append(survivorship.analyze(root, tables_by_kind))
+        except Exception as exc:  # noqa: BLE001 - keep analysis failures visible.
+            analysis = DatasetResult(
+                dataset_id=survivorship.ANALYSIS_DATASET_ID,
+                category=survivorship.ANALYSIS_CATEGORY,
+                label=survivorship.ANALYSIS_LABEL,
+                path="survivorship",
+            )
+            analysis.add_error(
+                "runner.validator_exception",
+                f"{type(exc).__name__}: {exc}",
+            )
+            report.datasets.append(analysis)
 
     return report

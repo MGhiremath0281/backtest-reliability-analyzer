@@ -16,7 +16,7 @@ dist/
 venv/
 
 # Generated reports
-reports/
+/reports/
 
 # Brag / AI-generated output
 brag-output/

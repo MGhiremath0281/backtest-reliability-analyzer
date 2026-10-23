@@ -63,10 +63,20 @@ def test_run_validation_on_complete_fixture_passes(tmp_path: Path):
 
     report = run_validation(root)
 
-    assert report.overall_status is Status.PASS
-    assert report.summary()["pass"] == len(report.datasets)
+    # The survivorship analyzer reports structural limitations (current listing
+    # snapshot is not a point-in-time universe; index membership coverage starts
+    # in September 2013) as warnings, so a clean fixture is WARN, not PASS.
+    assert report.overall_status is Status.WARN
     assert report.error_count == 0
-    assert report.warning_count == 0
+    assert report.warning_count > 0
+
+    by_id = {dataset.dataset_id: dataset for dataset in report.datasets}
+    assert "survivorship:analysis" in by_id
+    analysis = by_id["survivorship:analysis"]
+    codes = {issue.code for issue in analysis.issues}
+    assert "survivorship.current_listing_snapshot_not_point_in_time" in codes
+    assert "survivorship.index_membership_coverage_gap" in codes
+    assert analysis.status is Status.WARN
 
 
 def test_discovery_is_stable_and_relative(tmp_path: Path):

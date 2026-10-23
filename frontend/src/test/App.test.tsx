@@ -18,32 +18,34 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   };
 });
 
-describe('Application Shell & Routing', () => {
-  it('renders the Top Navigation with // BRA branding', () => {
+describe('Public Landing Page & Routing', () => {
+  it('renders the public landing page with Devlab headline at /', () => {
+    window.history.pushState({}, 'Test', '/');
     render(<App />);
-    expect(screen.getByText('BRA')).toBeInTheDocument();
-    expect(screen.getByText('Backtest Reliability Analyzer')).toBeInTheDocument();
-    expect(screen.getByText('NEW RUN')).toBeInTheDocument();
+
+    expect(screen.getByText(/Trust Your Backtests/i)).toBeInTheDocument();
+    expect(screen.getByText(/Challenge Your Assumptions/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /OPEN DASHBOARD/i })).toBeInTheDocument();
   });
 
-  it('renders the Sidebar with core navigation sections', () => {
+  it('renders landing page metrics and feature sections', () => {
+    window.history.pushState({}, 'Test', '/');
     render(<App />);
+
+    expect(screen.getByText(/3 Core/i)).toBeInTheDocument();
+    expect(screen.getByText(/46 Endpoints/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Point-in-Time/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: /How It Works/i })).toBeInTheDocument();
+  });
+
+  it('renders the internal application shell on /dashboard', () => {
+    window.history.pushState({}, 'Test', '/dashboard');
+    render(<App />);
+
     expect(screen.getByText('OVERVIEW')).toBeInTheDocument();
     expect(screen.getByText('DATA MANAGEMENT')).toBeInTheDocument();
     expect(screen.getByText('BIAS ANALYZERS')).toBeInTheDocument();
     expect(screen.getByText('PIPELINE & AUDITS')).toBeInTheDocument();
-    expect(screen.getByText('SYSTEM')).toBeInTheDocument();
-  });
-
-  it('renders the breadcrumb bar and quant platform label', () => {
-    render(<App />);
     expect(screen.getByText('QUANT AUDIT PLATFORM')).toBeInTheDocument();
-    expect(screen.getByText('Home')).toBeInTheDocument();
-  });
-
-  it('renders the footer with zero-hardcoding engine notice', () => {
-    render(<App />);
-    expect(screen.getByText(/Zero-Hardcoding Engine/)).toBeInTheDocument();
-    expect(screen.getByText(/NSE Point-in-Time/)).toBeInTheDocument();
   });
 });

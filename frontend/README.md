@@ -54,8 +54,19 @@ The application will be live at `http://localhost:5173`.
 
 ## Integrated Pages & Backend Endpoints
 
-### 1. Overview Dashboard (`/`)
-- Hero section with bespoke Devlab geometric visual art and platform metrics.
+### 1. Public Landing Page (`/`)
+- Minimalist editorial Devlab landing page introducing BRA.
+- Bold headline: **"Trust Your Backtests. Challenge Your Assumptions."**
+- Prominent **"Open Dashboard"** CTA linking directly to `/dashboard`.
+- Bespoke geometric SVG visual art (`GeometricGraphic.tsx`).
+- 4-column platform metric strip: 3 Core Engines, 46 Endpoints, Point-in-Time, PDF • CSV • JSON.
+- Live interactive engine matrix preview querying real backend datasets and health status.
+- Architectural capabilities breakdown (4 editorial cards).
+- 3-phase "How It Works" workflow guide.
+- Institutional CTA banner and professional footer.
+
+### 2. Overview Dashboard (`/dashboard`)
+- Executive quant audit workspace with real metrics.
 - 4-column metric ribbon: Datasets, Executed Runs, Flagged Findings, Generated Reports.
 - Engine summary cards for Survivorship, Look-Ahead, and Corporate Actions.
 - Execution frequency distribution chart (Recharts) and Recent Runs table.

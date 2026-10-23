@@ -27,13 +27,10 @@ from .support import (
     CA_HEADERS,
     CURRENT_LISTING_HEADERS,
     LEGACY_FINANCIAL_HEADERS,
-    PRICE_HEADERS,
     ca_row,
     create_valid_data_root,
     current_listing_row,
     legacy_financial_row,
-    price_row,
-    write_csv,
 )
 
 
@@ -246,8 +243,8 @@ def test_financial_records_from_legacy_raw_uses_filename_symbol():
         [legacy_financial_row()],
         filename="CF-FR-equities-TCS-22-10-2021-to-22-10-2026.csv",
     )
-    records = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))  # noqa: S108 - inert paths
-    assert records.row_count == 1  # noqa: F821
+    records = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))
+    assert records.row_count == 1
 
 
 def test_financial_record_symbols_and_kinds():
@@ -305,7 +302,7 @@ def test_unparseable_timestamps_reported_and_excluded():
         ],
         filename="CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv",
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))
 
     codes = issue_codes(result)
     assert "lookahead.timestamp_unparseable" in codes
@@ -321,7 +318,7 @@ def test_sentinel_values_are_skipped_not_used():
         [legacy_financial_row(received="-", disseminated="--")],
         filename="CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv",
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))
 
     pub = result.metrics["financial_publication"]
     assert pub["publication_missing"] == 1
@@ -363,7 +360,7 @@ def test_dissemination_before_period_is_confirmed_violation():
         ],
         filename="CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv",
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))
 
     pub = result.metrics["financial_publication"]
     assert pub["before_period_count"] == 1
@@ -390,7 +387,7 @@ def test_dissemination_before_received_is_confirmed_violation():
         ],
         filename="CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv",
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=table))
 
     pub = result.metrics["financial_publication"]
     assert pub["dissemination_before_receipt_count"] == 1
@@ -412,7 +409,7 @@ def test_revision_before_original_publication_is_confirmed():
         INTEGRATED_FINANCIAL_HEADERS,
         [original, revised],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(integrated_financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(integrated_financials=table))
 
     rev = result.metrics["financial_revisions"]
     assert rev["revision_rows"] == 1
@@ -438,7 +435,7 @@ def test_revision_after_publication_creates_restatement_window():
         INTEGRATED_FINANCIAL_HEADERS,
         [original, revised],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(integrated_financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(integrated_financials=table))
 
     rev = result.metrics["financial_revisions"]
     assert rev["revision_before_publication_count"] == 0
@@ -461,7 +458,7 @@ def test_revised_only_period_makes_no_ordering_claim():
         INTEGRATED_FINANCIAL_HEADERS,
         [revised],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(integrated_financials=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(integrated_financials=table))
 
     rev = result.metrics["financial_revisions"]
     assert rev["revision_rows"] == 1
@@ -480,7 +477,7 @@ def test_record_date_before_ex_date_is_suspicious():
         CA_HEADERS,
         [ca_row(ex_date="16-Jun-2024", record_date="15-Jun-2024")],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(corporate_actions=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(corporate_actions=table))
 
     actions = result.metrics["corporate_action_timing"]
     assert actions["record_before_ex_count"] == 1
@@ -495,7 +492,7 @@ def test_action_without_ex_date_is_insufficient():
         CA_HEADERS,
         [ca_row(ex_date="-", record_date="16-Jun-2024")],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(corporate_actions=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(corporate_actions=table))
 
     assert "lookahead.ex_date_missing" in issue_codes(result)
     assert (
@@ -505,7 +502,7 @@ def test_action_without_ex_date_is_insufficient():
 
 def test_announcement_unavailable_is_reported_when_actions_exist():
     table = make_table("corporate_actions", CA_HEADERS, [ca_row()])
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(corporate_actions=table))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(corporate_actions=table))
 
     assert "lookahead.announcement_timestamp_unavailable" in issue_codes(result)
     entry = next(
@@ -514,7 +511,7 @@ def test_announcement_unavailable_is_reported_when_actions_exist():
         if item["code"] == "lookahead.announcement_timestamp_unavailable"
     )
     assert entry["kind"] == "insufficient_lookahead_evidence"
-    assert "EX-DATE" in actions_note(result)  # noqa: F821
+    assert "EX-DATE" in actions_note(result)
 
 
 def actions_note(result) -> str:
@@ -537,7 +534,7 @@ def test_pre_event_price_coverage_measured():
         [derived_price_row("10-Jun-2024"), derived_price_row("18-Jun-2024")],
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         tables_for(corporate_actions=actions, derived_prices=prices),
     )
     coverage = result.metrics["corporate_action_timing"]["event_price_coverage"]
@@ -565,7 +562,7 @@ def test_missing_pre_event_prices_is_insufficient():
         [derived_price_row("18-Jun-2024", symbol="NEWCO")],
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         tables_for(corporate_actions=actions, derived_prices=prices),
     )
     coverage = result.metrics["corporate_action_timing"]["event_price_coverage"]
@@ -581,7 +578,7 @@ def test_unpriced_action_symbol_is_listed_without_coverage_class():
         [ca_row(ex_date="15-Jun-2024", symbol="UNPRICED")],
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         tables_for(corporate_actions=actions),
     )
     coverage = result.metrics["corporate_action_timing"]["event_price_coverage"]
@@ -596,7 +593,7 @@ def test_price_availability_limit_is_reported():
         DERIVED_PRICE_HEADERS,
         [derived_price_row("2024-06-28")],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(derived_prices=prices))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(derived_prices=prices))
 
     assert "lookahead.price_availability_unknown" in issue_codes(result)
     assert result.metrics["price_availability"]["rows"] == 1
@@ -621,7 +618,7 @@ def test_snapshot_summary_counts_and_dates():
             snapshot_row("INFY", "2026-09-30"),
         ],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(index_snapshot=snapshots))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(index_snapshot=snapshots))
 
     universe = result.metrics["point_in_time_universe"]
     assert universe["snapshot_count"] == 2
@@ -652,7 +649,7 @@ def test_missing_current_listing_reference_warns():
         [legacy_financial_row()],
         filename="CF-FR-equities-INFY-22-10-2021-to-22-10-2026.csv",
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=financial))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(financials=financial))
 
     assert "lookahead.current_listing_missing" in issue_codes(result)
 
@@ -663,7 +660,7 @@ def test_current_listing_rows_are_parsed_without_membership_claims():
         CURRENT_LISTING_HEADERS,
         [current_listing_row(), current_listing_row(symbol="TCS")],
     )
-    result = lookahead.analyze(Path("/tmp/root"), tables_for(current_listing=listings))  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), tables_for(current_listing=listings))
 
     assert result.metrics["data_facts"]["listing_rows"] == 2
     entry = next(
@@ -755,7 +752,7 @@ def base_tables():
 
 
 def test_without_config_only_the_general_audit_runs():
-    result = lookahead.analyze(Path("/tmp/root"), base_tables())  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables())
 
     assert result.metrics["analysis"]["mode"] == "general_temporal_evidence_audit"
     assert result.metrics["analysis"]["backtest_config_supplied"] is False
@@ -771,7 +768,7 @@ def test_without_config_only_the_general_audit_runs():
 
 def test_invalid_config_is_reported_as_invalid():
     config = LookaheadConfig(start_date=date(2024, 6, 1), end_date=date(2024, 1, 1))
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
 
     assert result.metrics["backtest_assessment"]["status"] == "invalid"
     codes = issue_codes(result)
@@ -796,7 +793,7 @@ def test_confirmed_future_membership_reliance():
         universe_symbols=("INFY",),
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         {**base_tables(), "index_snapshot": [snapshots]},
         config=config,
     )
@@ -820,7 +817,7 @@ def test_membership_relied_snapshot_older_than_decision_is_ok():
         membership_snapshot_dates=(date(2023, 6, 30),),
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         {**base_tables(), "index_snapshot": [snapshots]},
         config=config,
     )
@@ -840,7 +837,7 @@ def test_membership_snapshot_missing_is_unavailable():
         membership_snapshot_dates=(date(2022, 6, 30),),
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         {**base_tables(), "index_snapshot": [snapshots]},
         config=config,
     )
@@ -855,7 +852,7 @@ def test_universe_symbols_from_present_day_listing_only_is_suspicious():
         decision_dates=(date(2023, 1, 1),),
         universe_symbols=("INFY", "NEVERSEEN"),
     )
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
     check = checks_by_name(result)["point_in_time_universe"]
     assert check["status"] == "suspicious"
     reasons = [entry["reason"] for entry in check["evidence"]["entries"]]
@@ -866,7 +863,7 @@ def test_universe_symbols_from_present_day_listing_only_is_suspicious():
 
 def test_no_snapshots_at_all_makes_universe_check_unavailable():
     config = LookaheadConfig(decision_dates=(date(2024, 1, 1),), universe_symbols=("INFY",))
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
     check = checks_by_name(result)["point_in_time_universe"]
     assert check["status"] == "unavailable"
     assert check["reason"] == (
@@ -879,7 +876,7 @@ def test_decision_profile_counts_published_and_unpublished_figures():
     config = LookaheadConfig(
         decision_dates=(date(2024, 1, 2),),
     )
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
     check = checks_by_name(result)["publication_timing"]
     profile = check["evidence"]["decision_profiles"][0]
     assert profile["decision"] == "2024-01-02"
@@ -899,7 +896,7 @@ def test_decision_profile_counts_published_and_unpublished_figures():
 
 def test_decision_before_any_relying_period_is_available_profiles_only():
     config = LookaheadConfig(decision_dates=(date(2023, 1, 1),))
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
     check = checks_by_name(result)["publication_timing"]
     assert check["status"] == "ok"
     assert check["evidence"]["decision_profiles"][0]["relying_records"] == 0
@@ -920,7 +917,7 @@ def test_future_price_rows_within_interval_are_suspicious():
         decision_dates=(date(2023, 12, 1),),
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         {**base_tables(), "derived_prices": [prices]},
         config=config,
     )
@@ -943,7 +940,7 @@ def test_events_after_decision_are_reported_as_insufficient():
         decision_dates=(date(2024, 1, 1),),
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         {**base_tables(), "corporate_actions": [actions]},
         config=config,
     )
@@ -971,7 +968,7 @@ def test_restatement_window_overlapping_decision_is_reported():
     )
     config = LookaheadConfig(decision_dates=(date(2025, 3, 1),))
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         tables_for(integrated_financials=integrated),
         config=config,
     )
@@ -997,7 +994,7 @@ def test_derived_financial_violations_attributed_to_derived_feature_check():
         decision_dates=(date(2024, 1, 1),),
     )
     result = lookahead.analyze(
-        Path("/tmp/root"),  # noqa: S108 - inert paths
+        Path("/tmp/root"),
         {**base_tables(), "derived_financials_legacy": [table]},
         config=config,
     )
@@ -1009,7 +1006,7 @@ def test_derived_financial_violations_attributed_to_derived_feature_check():
 
 def test_decision_timestamp_coverage_reports_boundary_limitation():
     config = LookaheadConfig(decision_dates=(date(2024, 1, 2), date(2024, 7, 1)))
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
     check = checks_by_name(result)["decision_timestamp_coverage"]
     assert check["status"] == "ok"
     assert check["evidence"]["decision_count"] == 2
@@ -1018,7 +1015,7 @@ def test_decision_timestamp_coverage_reports_boundary_limitation():
 
 def test_no_decisions_and_no_interval_marks_checks_not_applicable():
     config = LookaheadConfig(universe_symbols=("INFY",))
-    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)  # noqa: S108 - inert paths
+    result = lookahead.analyze(Path("/tmp/root"), base_tables(), config=config)
     by_name = checks_by_name(result)
     assert by_name["publication_timing"]["status"] == "not_applicable"
     assert by_name["decision_timestamp_coverage"]["status"] == "not_applicable"
@@ -1032,7 +1029,7 @@ def test_no_decisions_and_no_interval_marks_checks_not_applicable():
 
 def test_analysis_is_deterministic():
     tables = base_tables()
-    first = lookahead.analyze(Path("/tmp/root"), tables)  # noqa: S108 - inert paths
+    first = lookahead.analyze(Path("/tmp/root"), tables)
     second = lookahead.analyze(Path("/tmp/root"), tables)
 
     assert first.metrics == second.metrics
